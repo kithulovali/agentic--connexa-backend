@@ -5,6 +5,7 @@ from models.utils import ProductStatus
 from services.ai_agents import run_agent, _collect_context
 from services.lookup_service import get_lookup
 from services.order_service import create_order, update_order
+from services.payment_service import create_payment
 
 
 def test_agents_use_deterministic_fallback_without_api_key(session, monkeypatch):
@@ -51,7 +52,7 @@ def test_business_intelligence_separates_cancelled_and_paid_order_value(session)
     )
 
     update_order(cancelled_order.id, {"order_status": "CANCELLED"}, session)
-    update_order(paid_order.id, {"payment_status": "PAID"}, session)
+    create_payment(paid_order.id, payment_method="BANK", amount=paid_order.total_price, session=session)
 
     summary = _collect_context(session)["summary"]
 
@@ -180,7 +181,7 @@ def test_new_agents_have_safe_deterministic_fallbacks(session, monkeypatch):
     assert image_result["model"] == "deterministic-fallback"
     assert "no image was generated" in image_result["answer"]
     assert shopping_result["model"] == "deterministic-fallback"
-    assert "could not identify a matching" in shopping_result["answer"]
+    assert "I can help you find something suitable" in shopping_result["answer"]
     assert growth_result["model"] == "deterministic-fallback"
     assert "not verified revenue" in growth_result["answer"]
     assert ai_agents.AGENT_PROMPT_FILES["growth_optimization"] == "growth_optimization.md"

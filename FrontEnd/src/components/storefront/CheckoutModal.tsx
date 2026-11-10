@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   X,
   CreditCard,
@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
+  MapPin,
+  LocateFixed,
 } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -30,6 +32,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const { user, isAuthenticated } = useAuthStore();
 
   const [address, setAddress] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState<string | null>(null);
+  const addressEditedByCustomer = useRef(false);
   const [contact, setContact] = useState(user?.contact || '');
   const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'MOBILE MONEY' | 'CRYPTO'>('BANK');
 
@@ -41,6 +46,67 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [paymentReceipt, setPaymentReceipt] = useState<PaymentOut | null>(null);
 
   const total = getTotalPrice();
+
+  const resolveCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationMessage('Location is not supported by this browser. Enter your address manually.');
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationMessage('Getting your location…');
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const params = new URLSearchParams({
+            format: 'jsonv2',
+            lat: String(coords.latitude),
+            lon: String(coords.longitude),
+            zoom: '18',
+            addressdetails: '1',
+          });
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          if (!response.ok) throw new Error('The address lookup service could not resolve your location.');
+          const result: { display_name?: string } = await response.json();
+          const resolvedAddress = result.display_name?.trim();
+          if (!resolvedAddress) throw new Error('No readable address was found for this location.');
+
+          if (!addressEditedByCustomer.current) {
+            setAddress(resolvedAddress);
+            setLocationMessage('Delivery address detected from your current location. You can edit it before ordering.');
+          } else {
+            setLocationMessage('Location detected. Your manually entered address was kept.');
+          }
+        } catch (locationError) {
+          console.error('Reverse geocoding failed:', locationError);
+          setLocationMessage(locationError instanceof Error ? `${locationError.message} Enter your address manually.` : 'Could not resolve your address. Enter it manually.');
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (geoError) => {
+        const message =
+          geoError.code === geoError.PERMISSION_DENIED
+            ? 'Location permission was denied. Allow location access or enter your address manually.'
+            : geoError.code === geoError.POSITION_UNAVAILABLE
+              ? 'Your current location is unavailable. Enter your address manually.'
+              : 'Location request timed out. Try again or enter your address manually.';
+        setLocationMessage(message);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    );
+  };
+
+  useEffect(() => {
+    resolveCurrentLocation();
+    // Request location when checkout opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -181,17 +247,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             {/* Delivery Inputs */}
             <div className="space-y-4 mb-6">
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 block mb-1 uppercase font-mono">
-                  Shipping Address *
-                </label>
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <label className="text-[11px] font-semibold text-slate-300 uppercase font-mono">Shipping Address *</label>
+                  <button type="button" onClick={resolveCurrentLocation} disabled={isLocating} className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-sky-400 hover:text-sky-300 disabled:opacity-50">
+                    {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
+                    {isLocating ? 'Locating…' : 'Use current location'}
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Street, Suite / Apt, City, Country"
+                  onChange={(e) => { addressEditedByCustomer.current = true; setAddress(e.target.value); }}
+                  placeholder="Detecting your address…"
                   className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
                 />
+                {locationMessage && <p className="mt-1.5 text-[10px] text-slate-400 flex items-start gap-1.5"><MapPin className="w-3 h-3 mt-0.5 flex-shrink-0 text-sky-400" /><span>{locationMessage}</span></p>}
+                <p className="mt-1 text-[9px] text-slate-500">Location lookup uses OpenStreetMap. Please verify the detected address before ordering.</p>
               </div>
 
               <div>

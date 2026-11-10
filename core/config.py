@@ -32,6 +32,7 @@ class Settings:
         [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
         if _cors_origins.strip()
         else [
+            "https://agentic-connexa-frontend-taupe.vercel.app",
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:3000",

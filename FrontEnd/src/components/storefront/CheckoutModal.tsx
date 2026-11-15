@@ -21,12 +21,9 @@ interface CheckoutModalProps {
   onOpenAuth: () => void;
 }
 
-export const CheckoutModal: React.FC<CheckoutModalProps> = ({
-  onClose,
-  onOpenAuth,
-}) => {
+export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose }) => {
   const { items, getTotalPrice, clearCart } = useCartStore();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [address, setAddress] = useState('');
   const [locationStatus, setLocationStatus] = useState<'idle' | 'detecting' | 'success' | 'error'>('idle');
@@ -74,7 +71,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, locationAttempt]);
+  }, [locationAttempt]);
   const [contact, setContact] = useState(user?.contact || '');
   const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'MOBILE MONEY' | 'CRYPTO'>('BANK');
 
@@ -82,7 +79,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [createdOrder, setCreatedOrder] = useState<OrderOut | null>(null);
   const [createdOrders, setCreatedOrders] = useState<OrderOut[]>([]);
 
   const total = getTotalPrice();
@@ -339,7 +335,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                 <span className="text-slate-500 dark:text-slate-400">Payment Status:</span>
-                <span className="font-semibold text-amber-600 dark:text-amber-400">Pending Verification</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">Pending Payment</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 dark:text-slate-400">Delivery Address:</span>

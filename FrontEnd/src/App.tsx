@@ -57,7 +57,7 @@ export const App: React.FC = () => {
     if (currentView === 'admin' && !canAccessAdmin) {
       setCurrentView('store');
     }
-  }, [currentView, isAdmin]);
+  }, [currentView, canAccessAdmin]);
 
   // Search state passed between Hero and Grid
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,6 +182,7 @@ export const App: React.FC = () => {
       {/* Global Header */}
       <Header
         currentView={currentView}
+        canAccessAdmin={canAccessAdmin}
         onNavigate={(v) => setCurrentView(v === 'admin' && !canAccessAdmin ? 'store' : v)}
         onOpenAuth={() => setAuthModalOpen(true)}
         onFocusSearch={handleFocusSearch}

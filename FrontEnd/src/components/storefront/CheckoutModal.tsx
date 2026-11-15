@@ -176,7 +176,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose }) => {
                 ))}
               </div>
               <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between text-xs font-bold">
-                <span className="text-slate-600 dark:text-slate-300">Total Payable:</span>
+                <span className="text-slate-600 dark:text-slate-300">Order Total:</span>
                 <span className="text-brand-600 dark:text-brand-400 font-mono text-sm">
                   {formatCurrency(total)}
                 </span>

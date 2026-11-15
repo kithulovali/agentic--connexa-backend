@@ -5,7 +5,6 @@ import {
   Building2,
   Smartphone,
   Coins,
-  ShieldCheck,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -15,7 +14,7 @@ import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { api } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
-import { OrderOut, PaymentOut } from '../../types';
+import { OrderOut } from '../../types';
 
 interface CheckoutModalProps {
   onClose: () => void;
@@ -34,8 +33,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [locationAttempt, setLocationAttempt] = useState(0);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     if (!navigator.geolocation) {
       setLocationStatus('error');
       return;
@@ -86,44 +83,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const [createdOrder, setCreatedOrder] = useState<OrderOut | null>(null);
-  const [paymentReceipt, setPaymentReceipt] = useState<PaymentOut | null>(null);
+  const [createdOrders, setCreatedOrders] = useState<OrderOut[]>([]);
 
   const total = getTotalPrice();
-
-  if (!isAuthenticated) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md">
-        <div className="w-full max-w-md rounded-3xl bg-white dark:glass-dropdown p-6 text-center border border-slate-200 dark:border-slate-800 shadow-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto mb-4">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 font-heading">
-            Authentication Required
-          </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 mb-6">
-            Please sign in or create an account to securely place your electronics order and process your payment.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                onClose();
-                onOpenAuth();
-              }}
-              className="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25"
-            >
-              Sign In / Register
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const handlePlaceOrderAndPay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,9 +104,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setStep('PROCESSING');
 
     try {
-      let lastOrder: OrderOut | null = null;
-      let lastPayment: PaymentOut | null = null;
-      let totalPaidAmount = 0;
+      const submittedOrders: OrderOut[] = [];
 
       for (const item of items) {
         const order = await api.placeOrder({
@@ -154,30 +114,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           contact: contact.trim(),
           payment_method: paymentMethod,
         });
-        lastOrder = order;
-
-        const amountToPay = order.total_price || String((parseFloat(item.product.price) || 0) * item.quantity);
-        const payment = await api.processPayment({
-          order_id: order.id,
-          payment_method: paymentMethod,
-          amount: amountToPay,
-        });
-        lastPayment = payment;
-        totalPaidAmount += parseFloat(String(payment.amount)) || 0;
+        submittedOrders.push(order);
       }
 
-      if (lastOrder && lastPayment) {
-        setCreatedOrder(lastOrder);
-        setPaymentReceipt({
-          ...lastPayment,
-          amount: String(totalPaidAmount.toFixed(2)),
-        });
-      }
+      setCreatedOrders(submittedOrders);
       clearCart();
       setStep('SUCCESS');
     } catch (err: any) {
       console.error('Order/Payment failed:', err);
-      setError(err.message || 'Payment processing failed. Please check your details.');
+      setError(err.message || 'Order submission failed. Please check your details.');
       setStep('FORM');
     } finally {
       setLoading(false);
@@ -203,11 +148,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <CreditCard className="w-5 h-5 text-brand-500" />
               <h3 className="text-lg font-bold text-slate-900 dark:text-white font-heading">
-                Checkout & Instant Payment
+                Checkout & Place Order
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-              Review delivery coordinates and select your payment rail.
+              Provide your delivery details and choose your preferred payment method.
             </p>
 
             {error && (
@@ -295,7 +240,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {/* Payment Rail Options */}
               <div>
                 <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1.5 uppercase font-mono">
-                  Select Payment Method
+                  Preferred Payment Method
                 </label>
                 <div className="grid grid-cols-3 gap-2.5">
                   <button
@@ -340,12 +285,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             </div>
 
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 -mt-2 mb-4" role="note">
+              Online payment is not available yet. Your selected method is recorded as a preference. Payment remains pending until our team provides instructions and verifies receipt.
+            </p>
+
             <button
               type="submit"
               disabled={loading || items.length === 0}
               className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 hover:from-brand-600 hover:to-accent-600 text-white font-bold text-xs shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all hover:scale-102"
             >
-              <span>Confirm Order & Pay {formatCurrency(total)}</span>
+              <span>Place Order — {formatCurrency(total)}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -355,49 +304,47 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div className="py-12 text-center space-y-4">
             <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading">
-              Authorizing Order & Payment
+              Submitting Your Order
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-              Connecting with Urban Scenery Ventures payment gateway rail...
+              Please wait while we submit your order details...
             </p>
           </div>
         )}
 
-        {step === 'SUCCESS' && createdOrder && paymentReceipt && (
+        {step === 'SUCCESS' && createdOrders.length > 0 && (
           <div className="text-center py-4 space-y-4 animate-in fade-in">
             <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">Payment Successful!</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">Order Submitted Successfully</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-              Your order has been received, paid, and dispatched to our logistics team for fulfilment.
+              Your order has been received. Payment is still pending; our team will contact you with payment instructions and verify receipt before updating its status.
             </p>
 
-            {/* Receipt Card */}
+            {/* Order confirmation */}
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left text-xs space-y-2">
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                <span className="text-slate-500 dark:text-slate-400">Order Reference:</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">#{createdOrder.id}</span>
+                <span className="text-slate-500 dark:text-slate-400">Order Reference(s):</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white text-right">{createdOrders.map((order) => `#${order.id}`).join(', ')}</span>
               </div>
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                <span className="text-slate-500 dark:text-slate-400">Payment ID:</span>
-                <span className="font-mono text-brand-600 dark:text-brand-400 font-bold">#{paymentReceipt.id}</span>
+                <span className="text-slate-500 dark:text-slate-400">Preferred Method:</span>
+                <span className="font-mono text-slate-900 dark:text-white">{paymentMethod}</span>
               </div>
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                <span className="text-slate-500 dark:text-slate-400">Method:</span>
-                <span className="font-mono text-slate-900 dark:text-white">{paymentReceipt.payment_method}</span>
+                <span className="text-slate-500 dark:text-slate-400">Order Total:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">{formatCurrency(total)}</span>
               </div>
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                <span className="text-slate-500 dark:text-slate-400">Amount Paid:</span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(paymentReceipt.amount)}
-                </span>
+                <span className="text-slate-500 dark:text-slate-400">Payment Status:</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">Pending Verification</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 dark:text-slate-400">Delivery Address:</span>
                 <span className="text-slate-900 dark:text-white text-right truncate max-w-[200px]">
-                  {createdOrder.address}
+                  {createdOrders[0].address}
                 </span>
               </div>
             </div>

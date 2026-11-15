@@ -25,28 +25,28 @@ export const App: React.FC = () => {
   const { setIsOpen: setCartOpen, addItem } = useCartStore();
   const { setTheme } = useThemeStore();
   const { token, isAuthenticated, isAdmin, updateUser, logout } = useAuthStore();
-  const [authVerified, setAuthVerified] = useState(false);
-  const canAccessAdmin = authVerified && isAuthenticated && isAdmin;
+  const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
+  const canAccessAdmin = Boolean(token && verifiedToken === token && isAuthenticated && isAdmin);
 
   useEffect(() => {
     let active = true;
     if (!token) {
-      setAuthVerified(true);
+      setVerifiedToken(null);
       return () => { active = false; };
     }
-    setAuthVerified(false);
+    setVerifiedToken(null);
     api.getMe()
       .then((serverUser) => {
         if (active) {
           updateUser(serverUser);
-          setAuthVerified(true);
+          setVerifiedToken(token);
         }
       })
       .catch((error: unknown) => {
         if (!active) return;
         if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
           logout();
-          setAuthVerified(true);
+          setVerifiedToken(null);
         }
         // Keep merchant access disabled unless the backend confirms the account.
       });

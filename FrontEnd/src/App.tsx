@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { HeroBanner } from './components/storefront/HeroBanner';
@@ -13,6 +13,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { useCartStore } from './store/useCartStore';
 import { useThemeStore } from './store/useThemeStore';
 import { useAuthStore } from './store/useAuthStore';
+import { api, ApiError } from './services/api';
 
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'store' | 'admin'>('store');
@@ -23,7 +24,40 @@ export const App: React.FC = () => {
 
   const { setIsOpen: setCartOpen, addItem } = useCartStore();
   const { setTheme } = useThemeStore();
-  const { setAuth, logout, isAuthenticated } = useAuthStore();
+  const { token, isAuthenticated, isAdmin, updateUser, logout } = useAuthStore();
+  const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
+  const canAccessAdmin = Boolean(token && verifiedToken === token && isAuthenticated && isAdmin);
+
+  useEffect(() => {
+    let active = true;
+    if (!token) {
+      setVerifiedToken(null);
+      return () => { active = false; };
+    }
+    setVerifiedToken(null);
+    api.getMe()
+      .then((serverUser) => {
+        if (active) {
+          updateUser(serverUser);
+          setVerifiedToken(token);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          logout();
+          setVerifiedToken(null);
+        }
+        // Keep merchant access disabled unless the backend confirms the account.
+      });
+    return () => { active = false; };
+  }, [token, updateUser, logout]);
+
+  useEffect(() => {
+    if (currentView === 'admin' && !canAccessAdmin) {
+      setCurrentView('store');
+    }
+  }, [currentView, canAccessAdmin]);
 
   // Search state passed between Hero and Grid
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,8 +151,12 @@ export const App: React.FC = () => {
         setAssistantPrompt('What flagship hardware do you recommend under $500?');
         break;
       case 'admin_gate':
-        logout();
-        setCurrentView('admin');
+        if (canAccessAdmin) {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('store');
+          if (!isAuthenticated) setAuthModalOpen(true);
+        }
         break;
       case 'admin_overview':
       case 'admin_products':
@@ -127,17 +165,12 @@ export const App: React.FC = () => {
       case 'admin_payments':
       case 'admin_ai_studio':
       case 'admin_platforms':
-        if (!isAuthenticated) {
-          // Provide instant admin access for live review
-          setAuth('demo-admin-token', {
-            public_id: 'usr_admin_001',
-            name: 'Admin Reviewer',
-            email: 'admin@urbanscenery.com',
-            role: 'admin',
-            created_at: new Date().toISOString(),
-          });
+        if (canAccessAdmin) {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('store');
+          if (!isAuthenticated) setAuthModalOpen(true);
         }
-        setCurrentView('admin');
         break;
       default:
         break;
@@ -149,7 +182,8 @@ export const App: React.FC = () => {
       {/* Global Header */}
       <Header
         currentView={currentView}
-        onNavigate={(v) => setCurrentView(v)}
+        canAccessAdmin={canAccessAdmin}
+        onNavigate={(v) => setCurrentView(v === 'admin' && !canAccessAdmin ? 'store' : v)}
         onOpenAuth={() => setAuthModalOpen(true)}
         onFocusSearch={handleFocusSearch}
         onSelectCategory={handleCategorySelect}
@@ -159,7 +193,7 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {currentView === 'store' ? (
+        {currentView === 'store' || !canAccessAdmin ? (
           <>
             <HeroBanner
               onSearch={handleHeroSearch}

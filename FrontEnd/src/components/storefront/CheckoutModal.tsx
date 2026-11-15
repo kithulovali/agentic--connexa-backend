@@ -30,71 +30,54 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const { user, isAuthenticated } = useAuthStore();
 
   const [address, setAddress] = useState('');
-  const [locationStatus, setLocationStatus] = useState<'detecting' | 'success' | 'error'>('detecting');
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'detecting' | 'success' | 'error'>('idle');
+  const [locationAttempt, setLocationAttempt] = useState(0);
 
   useEffect(() => {
-    if (!('geolocation' in navigator)) {
+    if (!isAuthenticated) return;
+
+    if (!navigator.geolocation) {
       setLocationStatus('error');
       return;
     }
 
     let cancelled = false;
+    setLocationStatus('detecting');
 
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
-          const params = new URLSearchParams({
-            latitude: String(coords.latitude),
-            longitude: String(coords.longitude),
-            localityLanguage: 'en',
-          });
-          const response = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?${params.toString()}`
-          );
+          const result = await api.reverseGeocode(coords.latitude, coords.longitude);
+          if (cancelled) return;
 
-          if (!response.ok) throw new Error('Reverse geocoding failed');
-
-          const place = await response.json();
-          const locality =
-            place.city ||
-            place.locality ||
-            place.principalSubdivision ||
-            '';
-          const addressParts = [
-            place.localityInfo?.administrative?.[0]?.name,
-            locality,
-            place.principalSubdivision,
-            place.countryName,
-          ].filter((part, index, all) => Boolean(part) && all.indexOf(part) === index);
-
-          if (!cancelled && addressParts.length > 0) {
-            setAddress((currentAddress) =>
-              currentAddress.trim() ? currentAddress : addressParts.join(', ')
-            );
-            setLocationStatus('success');
-          } else if (!cancelled) {
-            setLocationStatus('error');
+          if (!result.display_name?.trim()) {
+            throw new Error('The address service returned no readable address.');
           }
-        } catch (error) {
-          console.error('Address lookup failed:', error);
+
+          setAddress((currentAddress) =>
+            currentAddress.trim() ? currentAddress : result.display_name
+          );
+          setLocationStatus('success');
+        } catch (lookupError) {
+          console.error('Reverse geocoding failed:', lookupError);
           if (!cancelled) setLocationStatus('error');
         }
       },
-      (error) => {
-        console.warn('Geolocation unavailable:', error.message);
+      (geoError) => {
+        console.warn('Browser geolocation failed:', geoError.message);
         if (!cancelled) setLocationStatus('error');
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 300000,
+        timeout: 20000,
+        maximumAge: 60000,
       }
     );
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAuthenticated, locationAttempt]);
   const [contact, setContact] = useState(user?.contact || '');
   const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'MOBILE MONEY' | 'CRYPTO'>('BANK');
 
@@ -277,11 +260,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   }
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
-                <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400" aria-live="polite">
-                  {locationStatus === 'detecting' && 'Requesting location permission and finding your address...'}
-                  {locationStatus === 'success' && 'Address detected from your device location. You can edit it if needed.'}
-                  {locationStatus === 'error' && 'Could not detect your location. Enter your delivery address manually.'}
-                </p>
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400" aria-live="polite">
+                    {locationStatus === 'detecting' && 'Allow location access to find your delivery address...'}
+                    {locationStatus === 'success' && 'Location-based address suggestion. Verify and edit it before ordering. © OpenStreetMap contributors.'}
+                    {locationStatus === 'error' && 'Location could not be resolved. Enter your delivery address manually or try again.'}
+                  </p>
+                  {locationStatus === 'error' && (
+                    <button
+                      type="button"
+                      onClick={() => setLocationAttempt((attempt) => attempt + 1)}
+                      className="shrink-0 text-[10px] font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                    >
+                      Try again
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>

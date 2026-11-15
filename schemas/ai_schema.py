@@ -5,9 +5,9 @@ from schemas.product_schema import ProductOut
 
 
 class AIRecommendationQuery(BaseModel):
-    query: str = Field(..., min_length=2, description="What kind of electronics are you looking for?")
+    query: str = Field(..., min_length=2, max_length=1000, description="What kind of electronics are you looking for?")
     max_budget: Optional[Decimal] = Field(None, gt=0, description="Maximum budget")
-    preferred_category: Optional[str] = Field(None, description="Electronics category (e.g., Laptops, Phones, Audio, Accessories)")
+    preferred_category: Optional[str] = Field(None, max_length=80, description="Electronics category (e.g., Laptops, Phones, Audio, Accessories)")
 
 
 class AIRecommendationResponse(BaseModel):

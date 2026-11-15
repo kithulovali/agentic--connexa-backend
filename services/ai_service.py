@@ -1,4 +1,5 @@
 from decimal import Decimal
+import re
 from typing import Optional, List, Dict, Any
 from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
@@ -16,6 +17,24 @@ KEYWORD_MAPPINGS = {
     "accessory": ["charger", "cable", "case", "adapter", "powerbank"],
 }
 
+# Parse only explicit upper-bound language. Approximate phrases such as "around
+# 1000" are intentionally not treated as hard spending limits.
+_MAX_BUDGET_PATTERN = re.compile(
+    r"\b(?:under|below|less than|up to|maximum|max(?:imum)?(?: budget)?(?: of)?|"
+    r"budget(?: of)?)\s*[:=]?\s*[$€£]?\s*([\d,]+(?:\.\d{1,2})?)",
+    re.IGNORECASE,
+)
+
+
+def _extract_max_budget(query: str) -> Optional[Decimal]:
+    match = _MAX_BUDGET_PATTERN.search(query)
+    if not match:
+        return None
+    try:
+        return Decimal(match.group(1).replace(",", ""))
+    except Exception:
+        return None
+
 
 def get_electronics_recommendations(
     session: Session,
@@ -24,6 +43,9 @@ def get_electronics_recommendations(
     preferred_category: Optional[str] = None,
 ) -> Dict[str, Any]:
     query_lower = query.lower()
+    # Explicit API filters take precedence; otherwise honor a stated upper
+    # budget found in the combined customer conversation.
+    effective_budget = max_budget if max_budget is not None else _extract_max_budget(query)
 
     # Only recommend products that are marked available and have stock.
     statement = (
@@ -31,8 +53,8 @@ def get_electronics_recommendations(
         .join(Product.product_status_record)
         .where(ProductStatus.name == "AVAILABLE", Product.quantity > 0)
     )
-    if max_budget is not None:
-        statement = statement.where(Product.price <= max_budget)
+    if effective_budget is not None:
+        statement = statement.where(Product.price <= effective_budget)
 
     all_products = list(session.scalars(statement).all())
 
@@ -49,7 +71,7 @@ def get_electronics_recommendations(
     for prod in all_products:
         prod_text = f"{prod.name} {prod.description or ''}".lower()
         score = sum(2 for term in expanded_terms if term in prod_text)
-        if max_budget is not None and Decimal(str(prod.price)) <= max_budget:
+        if effective_budget is not None and Decimal(str(prod.price)) <= effective_budget:
             score += 1
         if score > 0:
             scored_products.append((score, prod))
@@ -61,7 +83,7 @@ def get_electronics_recommendations(
 
     advice = (
         f"Based on your requirements for '{query}'"
-        + (f" with a maximum budget of {max_budget}" if max_budget is not None else "")
+        + (f" with a maximum budget of {effective_budget}" if effective_budget is not None else "")
         + (
             f", we matched {len(recommended)} available electronics option(s)."
             if recommended

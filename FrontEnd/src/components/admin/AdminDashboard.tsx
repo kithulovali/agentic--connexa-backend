@@ -199,10 +199,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAdmin) {
       loadAllData();
     }
-  }, [isAuthenticated, isAdmin]);
+  }, [isAdmin]);
 
   // ==========================================
   // Computed KPI Metrics for Overview Tab
@@ -434,7 +434,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  if (!isAuthenticated) {
+  if (!isAdmin) {
     return (
       <div className="min-h-[75vh] flex items-center justify-center p-4">
         <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:glass-dropdown border border-slate-200 dark:border-slate-800 text-center shadow-xl">
@@ -442,10 +442,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <ShieldAlert className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2 font-heading">
-            Merchant Hub Sign In
+            Administrator Access Required
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-            Please log in with your administrative account to access operations, sales analytics, hardware inventory, and AI enterprise tools.
+            {isAuthenticated
+              ? 'Your account does not have the administrator role required to access merchant operations.'
+              : 'Sign in with an administrator account to access merchant operations, sales analytics, inventory, and platform tools.'}
           </p>
           <div className="flex gap-3">
             <button
@@ -454,12 +456,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               Back to Store
             </button>
-            <button
-              onClick={onOpenAuth}
-              className="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25"
-            >
-              Sign In
-            </button>
+            {!isAuthenticated && (
+              <button
+                onClick={onOpenAuth}
+                className="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </div>

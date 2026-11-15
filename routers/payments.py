@@ -39,6 +39,41 @@ def process_order_payment(
     )
 
 
+@router.post("/admin/verify", response_model=PaymentOut, status_code=status.HTTP_201_CREATED)
+def verify_order_payment(
+    payload: PaymentCreate,
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
+    """Record an offline payment only after an administrator verifies receipt."""
+    order = order_service.get_order(payload.order_id, db)
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order #{payload.order_id} not found",
+        )
+    if order.payment_status == "PAID":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Order #{payload.order_id} is already marked as paid",
+        )
+    if payload.payment_method != order.payment_method:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The verified payment method must match the method selected on the order",
+        )
+
+    try:
+        return payment_service.create_payment(
+            order_id=order.id,
+            payment_method=order.payment_method,
+            amount=payload.amount,
+            session=db,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+
 @router.get("/{payment_id}", response_model=PaymentOut)
 def get_payment_details(
     payment_id: int,

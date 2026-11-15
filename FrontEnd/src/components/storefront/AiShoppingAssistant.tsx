@@ -105,11 +105,11 @@ export const AiShoppingAssistant: React.FC<AiShoppingAssistantProps> = ({
       let recs: ProductOut[] | undefined = undefined;
       const normalizedPrompt = promptText.toLowerCase();
       const recommendationIntent =
-        /\\b(recommend|recommendation|best|budget|cheaper|cheapest|affordable|compare|comparison|alternative|similar|options?|in stock|available)\\b/.test(
+        /\b(recommend|recommendation|best|budget|cheaper|cheapest|affordable|compare|comparison|alternative|similar|options?|in stock|available)\b/.test(
           normalizedPrompt
         ) ||
         (conversationHistory.length > 0 &&
-          /\\b(what about|show me|another|lower price|less expensive|that one|those)\\b/.test(
+          /\b(what about|show me|another|lower price|less expensive|that one|those)\b/.test(
             normalizedPrompt
           ));
 
@@ -122,7 +122,7 @@ export const AiShoppingAssistant: React.FC<AiShoppingAssistantProps> = ({
             promptText,
           ]
             .join(' ')
-            .replace(/\\s+/g, ' ')
+            .replace(/\s+/g, ' ')
             .slice(-1200);
 
           const recRes = await api.getAiRecommendations({

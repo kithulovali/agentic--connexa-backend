@@ -50,3 +50,31 @@ def test_recommendations_do_not_return_unrelated_products(session):
 
     assert result["recommendations"] == []
     assert "no matching available products were found" in result["ai_advice"]
+
+
+
+def test_recommendations_enforce_explicit_budget_from_query(session):
+    available_status = get_lookup(session, ProductStatus, "AVAILABLE")
+    affordable = Product(
+        name="Business laptop",
+        price=Decimal("850.00"),
+        quantity=3,
+        description="Portable computer for programming and office work",
+        product_status_record=available_status,
+    )
+    over_budget = Product(
+        name="Premium laptop",
+        price=Decimal("1250.00"),
+        quantity=4,
+        description="High performance portable computer for programming",
+        product_status_record=available_status,
+    )
+    session.add_all([affordable, over_budget])
+    session.commit()
+
+    result = get_electronics_recommendations(
+        session, "Recommend a laptop under $1,000"
+    )
+
+    assert [product.id for product in result["recommendations"]] == [affordable.id]
+    assert "maximum budget of 1000" in result["ai_advice"]

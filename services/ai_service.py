@@ -7,15 +7,42 @@ from models.products_model import Product
 from models.utils import ProductStatus
 
 
-# Common electronics synonyms and spec keywords
+# Common electronics synonyms and spec keywords.
 KEYWORD_MAPPINGS = {
-    "phone": ["smartphone", "mobile", "iphone", "android", "galaxy"],
-    "laptop": ["notebook", "macbook", "pc", "computer", "thinkpad", "ultrabook"],
-    "audio": ["headphone", "earphone", "earbud", "speaker", "bluetooth", "sound"],
-    "gaming": ["gpu", "rgb", "console", "playstation", "xbox", "controller"],
-    "screen": ["monitor", "display", "tv", "4k", "oled"],
-    "accessory": ["charger", "cable", "case", "adapter", "powerbank"],
+    "phone": ["smartphone", "mobile", "iphone", "android", "galaxy", "phones"],
+    "laptop": ["notebook", "macbook", "pc", "computer", "thinkpad", "ultrabook", "laptops"],
+    "audio": [
+        "headphone", "headphones", "earphone", "earphones", "earbud", "earbuds",
+        "speaker", "speakers", "bluetooth", "sound",
+    ],
+    "gaming": ["gpu", "rgb", "console", "playstation", "xbox", "controller", "game"],
+    "screen": ["monitor", "display", "tv", "4k", "oled", "screens"],
+    "accessory": ["charger", "cable", "case", "adapter", "powerbank", "accessories"],
 }
+
+_SEARCH_STOP_WORDS = {
+    "a", "an", "and", "are", "best", "for", "from", "get", "i", "in", "is",
+    "it", "looking", "me", "of", "on", "or", "please", "recommend", "show",
+    "some", "the", "to", "want", "what", "with",
+}
+
+
+def _query_terms(query: str) -> set[str]:
+    """Return meaningful shopping terms without filler, currency, or budget numbers."""
+    return {
+        term for term in re.findall(r"[a-z]+", query.lower())
+        if len(term) > 1 and term not in _SEARCH_STOP_WORDS
+    }
+
+
+def _expanded_terms(query: str) -> set[str]:
+    terms = _query_terms(query)
+    expanded = set(terms)
+    for category, synonyms in KEYWORD_MAPPINGS.items():
+        group = {category, *synonyms}
+        if terms.intersection(group):
+            expanded.update(group)
+    return expanded
 
 # Parse only explicit upper-bound language. Approximate phrases such as "around
 # 1000" are intentionally not treated as hard spending limits.
@@ -42,12 +69,9 @@ def get_electronics_recommendations(
     max_budget: Optional[Decimal] = None,
     preferred_category: Optional[str] = None,
 ) -> Dict[str, Any]:
-    query_lower = query.lower()
     # Explicit API filters take precedence; otherwise honor a stated upper
-    # budget found in the combined customer conversation.
+    # budget found in the shopper's natural-language request.
     effective_budget = max_budget if max_budget is not None else _extract_max_budget(query)
-
-    # Only recommend products that are marked available and have stock.
     statement = (
         select(Product)
         .join(Product.product_status_record)
@@ -57,28 +81,25 @@ def get_electronics_recommendations(
         statement = statement.where(Product.price <= effective_budget)
 
     all_products = list(session.scalars(statement).all())
+    expanded_terms = _expanded_terms(query)
+    if preferred_category:
+        expanded_terms.update(_expanded_terms(preferred_category))
+        expanded_terms.update(_query_terms(preferred_category))
 
     scored_products = []
-    expanded_terms = set(query_lower.split())
-    for category, synonyms in KEYWORD_MAPPINGS.items():
-        if category in query_lower or any(s in query_lower for s in synonyms):
-            expanded_terms.add(category)
-            expanded_terms.update(synonyms)
+    for product in all_products:
+        product_terms = _query_terms(f"{product.name} {product.description or ''}")
+        matched_terms = expanded_terms.intersection(product_terms)
+        if not matched_terms:
+            continue
+        score = len(matched_terms)
+        if query.strip().lower() in f"{product.name} {product.description or ''}".lower():
+            score += 3
+        scored_products.append((score, product))
 
-    if preferred_category:
-        expanded_terms.add(preferred_category.lower())
-
-    for prod in all_products:
-        prod_text = f"{prod.name} {prod.description or ''}".lower()
-        score = sum(2 for term in expanded_terms if term in prod_text)
-        if effective_budget is not None and Decimal(str(prod.price)) <= effective_budget:
-            score += 1
-        if score > 0:
-            scored_products.append((score, prod))
-
-    scored_products.sort(key=lambda item: (-item[0], Decimal(str(item[1].price)), item[1].id))
-    # Do not fill an empty match set with unrelated products. Recommendations
-    # must satisfy the user's query, availability, and any supplied budget.
+    scored_products.sort(
+        key=lambda item: (-item[0], Decimal(str(item[1].price)), item[1].id)
+    )
     recommended = [product for _, product in scored_products[:5]]
 
     advice = (
@@ -87,8 +108,8 @@ def get_electronics_recommendations(
         + (
             f", we matched {len(recommended)} available electronics option(s)."
             if recommended
-            else ", no matching available products were found. Try another feature, "
-                 "category, or budget."
+            else ", no matching available products were found. Try another product type, "
+                 "feature, or budget."
         )
     )
     return {
@@ -99,7 +120,7 @@ def get_electronics_recommendations(
 
 
 def smart_search_electronics(session: Session, query: str) -> Dict[str, Any]:
-    query_lower = query.strip().lower()
+    expanded_terms = _expanded_terms(query)
     statement = (
         select(Product)
         .join(Product.product_status_record)
@@ -107,7 +128,7 @@ def smart_search_electronics(session: Session, query: str) -> Dict[str, Any]:
     )
 
     clauses = []
-    for term in query_lower.split():
+    for term in expanded_terms:
         term_filter = f"%{term}%"
         clauses.extend([Product.name.ilike(term_filter), Product.description.ilike(term_filter)])
 

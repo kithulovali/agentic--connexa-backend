@@ -78,3 +78,45 @@ def test_recommendations_enforce_explicit_budget_from_query(session):
 
     assert [product.id for product in result["recommendations"]] == [affordable.id]
     assert "maximum budget of 1000" in result["ai_advice"]
+
+
+def test_recommendations_ignore_filler_words_and_match_product_category(session):
+    available_status = get_lookup(session, ProductStatus, "AVAILABLE")
+    laptop = Product(
+        name="Office laptop",
+        price=Decimal("650.00"),
+        quantity=4,
+        description="Portable computer for study and office work",
+        product_status_record=available_status,
+    )
+    unrelated = Product(
+        name="USB charging cable",
+        price=Decimal("12.00"),
+        quantity=20,
+        description="Cable accessory for charging devices",
+        product_status_record=available_status,
+    )
+    session.add_all([laptop, unrelated])
+    session.commit()
+
+    result = get_electronics_recommendations(
+        session, "Please recommend a laptop for university"
+    )
+
+    assert [product.id for product in result["recommendations"]] == [laptop.id]
+
+
+def test_smart_search_does_not_return_all_products_for_filler_only_query(session):
+    available_status = get_lookup(session, ProductStatus, "AVAILABLE")
+    session.add(Product(
+        name="Wireless headphones",
+        price=Decimal("45.00"),
+        quantity=3,
+        product_status_record=available_status,
+    ))
+    session.commit()
+
+    result = smart_search_electronics(session, "please show me the best")
+
+    assert result["total_matches"] == 0
+    assert result["matches"] == []

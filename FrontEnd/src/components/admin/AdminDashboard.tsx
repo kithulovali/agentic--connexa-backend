@@ -328,6 +328,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const handleVerifyOrderPayment = async (order: OrderOut) => {
+    const confirmed = window.confirm(
+      `Have you independently confirmed receipt of ${formatCurrency(order.total_price)} for Order #${order.id} via ${order.payment_method}?`
+    );
+    if (!confirmed) return;
+
+    setUpdatingOrderId(order.id);
+    try {
+      await api.verifyOrderPayment({
+        order_id: order.id,
+        payment_method: order.payment_method,
+        amount: order.total_price,
+      });
+      showStatus(`Payment for Order #${order.id} verified and recorded.`);
+      loadAllData();
+    } catch (err: any) {
+      showStatus(err.message || 'Failed to verify order payment', 'error');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const handleRunAiAgent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
@@ -1333,6 +1355,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ))}
                           </div>
                         </div>
+                        {ord.payment_status !== 'PAID' && ord.order_status !== 'CANCELLED' && (
+                          <div className="pt-3 flex flex-wrap items-center justify-between gap-3">
+                            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-semibold">
+                              Manual Payment Verification:
+                            </span>
+                            <button
+                              type="button"
+                              disabled={updatingOrderId === ord.id}
+                              onClick={() => handleVerifyOrderPayment(ord)}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold disabled:opacity-40 transition-colors"
+                            >
+                              {updatingOrderId === ord.id ? 'Verifying...' : 'Verify payment received'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

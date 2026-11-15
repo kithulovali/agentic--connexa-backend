@@ -15,7 +15,7 @@ from core.config import settings
 from core.database import init_db
 from routers import (
     auth_router, users_router, products_router, orders_router,
-    payments_router, ai_router, agents_router, platforms_router,
+    payments_router, ai_router, agents_router, platforms_router, geolocation_router,
 )
 
 
@@ -44,7 +44,7 @@ app.add_middleware(
     CORSMiddleware, allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
-for router in (auth_router, users_router, products_router, orders_router, payments_router, ai_router, agents_router, platforms_router):
+for router in (auth_router, users_router, products_router, orders_router, payments_router, ai_router, agents_router, platforms_router, geolocation_router):
     app.include_router(router, prefix=settings.API_V1_STR)
 
 

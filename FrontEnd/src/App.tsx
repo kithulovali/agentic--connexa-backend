@@ -13,6 +13,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { useCartStore } from './store/useCartStore';
 import { useThemeStore } from './store/useThemeStore';
 import { useAuthStore } from './store/useAuthStore';
+import { api, ApiError } from './services/api';
 
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'store' | 'admin'>('store');
@@ -23,10 +24,37 @@ export const App: React.FC = () => {
 
   const { setIsOpen: setCartOpen, addItem } = useCartStore();
   const { setTheme } = useThemeStore();
-  const { isAdmin } = useAuthStore();
+  const { token, isAuthenticated, isAdmin, updateUser, logout } = useAuthStore();
+  const [authVerified, setAuthVerified] = useState(false);
+  const canAccessAdmin = authVerified && isAuthenticated && isAdmin;
 
   useEffect(() => {
-    if (currentView === 'admin' && !isAdmin) {
+    let active = true;
+    if (!token) {
+      setAuthVerified(true);
+      return () => { active = false; };
+    }
+    setAuthVerified(false);
+    api.getMe()
+      .then((serverUser) => {
+        if (active) {
+          updateUser(serverUser);
+          setAuthVerified(true);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          logout();
+          setAuthVerified(true);
+        }
+        // Keep merchant access disabled unless the backend confirms the account.
+      });
+    return () => { active = false; };
+  }, [token, updateUser, logout]);
+
+  useEffect(() => {
+    if (currentView === 'admin' && !canAccessAdmin) {
       setCurrentView('store');
     }
   }, [currentView, isAdmin]);
@@ -123,11 +151,11 @@ export const App: React.FC = () => {
         setAssistantPrompt('What flagship hardware do you recommend under $500?');
         break;
       case 'admin_gate':
-        if (isAdmin) {
+        if (canAccessAdmin) {
           setCurrentView('admin');
         } else {
           setCurrentView('store');
-          if (!useAuthStore.getState().isAuthenticated) setAuthModalOpen(true);
+          if (!isAuthenticated) setAuthModalOpen(true);
         }
         break;
       case 'admin_overview':
@@ -137,11 +165,11 @@ export const App: React.FC = () => {
       case 'admin_payments':
       case 'admin_ai_studio':
       case 'admin_platforms':
-        if (isAdmin) {
+        if (canAccessAdmin) {
           setCurrentView('admin');
         } else {
           setCurrentView('store');
-          if (!useAuthStore.getState().isAuthenticated) setAuthModalOpen(true);
+          if (!isAuthenticated) setAuthModalOpen(true);
         }
         break;
       default:
@@ -154,7 +182,7 @@ export const App: React.FC = () => {
       {/* Global Header */}
       <Header
         currentView={currentView}
-        onNavigate={(v) => setCurrentView(v === 'admin' && !isAdmin ? 'store' : v)}
+        onNavigate={(v) => setCurrentView(v === 'admin' && !canAccessAdmin ? 'store' : v)}
         onOpenAuth={() => setAuthModalOpen(true)}
         onFocusSearch={handleFocusSearch}
         onSelectCategory={handleCategorySelect}
@@ -164,7 +192,7 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {currentView === 'store' || !isAdmin ? (
+        {currentView === 'store' || !canAccessAdmin ? (
           <>
             <HeroBanner
               onSearch={handleHeroSearch}

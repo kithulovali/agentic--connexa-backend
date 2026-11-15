@@ -161,6 +161,7 @@ export const Header: React.FC<HeaderProps> = ({
             Storefront
           </button>
 
+          {isAdmin && (
           <button
             onClick={() => onNavigate('admin')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
@@ -175,6 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="w-2 h-2 rounded-full bg-accent-400 ring-2 ring-accent-400/30"></span>
             )}
           </button>
+          )}
         </nav>
 
         {/* Right Actions: Theme, Wishlist, Cart, Profile */}
@@ -268,6 +270,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <span>Browse Store</span>
                     </button>
 
+                    {isAdmin && (
                     <button
                       onClick={() => {
                         onNavigate('admin');
@@ -278,6 +281,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <LayoutDashboard className="w-4 h-4 text-accent-500" />
                       <span>Merchant Dashboard</span>
                     </button>
+                    )}
                   </div>
 
                   <div className="pt-1 border-t border-slate-200 dark:border-slate-800">
@@ -428,6 +432,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span>UI Showcase (16 Interfaces)</span>
             </button>
           )}
+          {isAdmin && (
           <button
             onClick={() => {
               onNavigate('admin');
@@ -446,6 +451,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             )}
           </button>
+          )}
         </div>
       )}
     </header>

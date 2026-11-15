@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { HeroBanner } from './components/storefront/HeroBanner';
@@ -23,7 +23,13 @@ export const App: React.FC = () => {
 
   const { setIsOpen: setCartOpen, addItem } = useCartStore();
   const { setTheme } = useThemeStore();
-  const { setAuth, logout, isAuthenticated } = useAuthStore();
+  const { isAdmin } = useAuthStore();
+
+  useEffect(() => {
+    if (currentView === 'admin' && !isAdmin) {
+      setCurrentView('store');
+    }
+  }, [currentView, isAdmin]);
 
   // Search state passed between Hero and Grid
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,8 +123,12 @@ export const App: React.FC = () => {
         setAssistantPrompt('What flagship hardware do you recommend under $500?');
         break;
       case 'admin_gate':
-        logout();
-        setCurrentView('admin');
+        if (isAdmin) {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('store');
+          if (!useAuthStore.getState().isAuthenticated) setAuthModalOpen(true);
+        }
         break;
       case 'admin_overview':
       case 'admin_products':
@@ -127,17 +137,12 @@ export const App: React.FC = () => {
       case 'admin_payments':
       case 'admin_ai_studio':
       case 'admin_platforms':
-        if (!isAuthenticated) {
-          // Provide instant admin access for live review
-          setAuth('demo-admin-token', {
-            public_id: 'usr_admin_001',
-            name: 'Admin Reviewer',
-            email: 'admin@urbanscenery.com',
-            role: 'admin',
-            created_at: new Date().toISOString(),
-          });
+        if (isAdmin) {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('store');
+          if (!useAuthStore.getState().isAuthenticated) setAuthModalOpen(true);
         }
-        setCurrentView('admin');
         break;
       default:
         break;
@@ -149,7 +154,7 @@ export const App: React.FC = () => {
       {/* Global Header */}
       <Header
         currentView={currentView}
-        onNavigate={(v) => setCurrentView(v)}
+        onNavigate={(v) => setCurrentView(v === 'admin' && !isAdmin ? 'store' : v)}
         onOpenAuth={() => setAuthModalOpen(true)}
         onFocusSearch={handleFocusSearch}
         onSelectCategory={handleCategorySelect}
@@ -159,7 +164,7 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {currentView === 'store' ? (
+        {currentView === 'store' || !isAdmin ? (
           <>
             <HeroBanner
               onSearch={handleHeroSearch}

@@ -26,9 +26,9 @@ def get_ai_product_recommendations(
     )
     discovery_request = payload.query
     if payload.max_budget is not None:
-        discovery_request += f"\\nMaximum budget: {payload.max_budget}"
+        discovery_request += f"\nMaximum budget: {payload.max_budget}"
     if payload.preferred_category:
-        discovery_request += f"\\nPreferred category: {payload.preferred_category}"
+        discovery_request += f"\nPreferred category: {payload.preferred_category}"
     discovery = run_agent("product_discovery", discovery_request, db)
     recommendations["ai_advice"] = discovery["answer"]
     return recommendations

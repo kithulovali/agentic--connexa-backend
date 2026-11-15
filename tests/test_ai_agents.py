@@ -63,7 +63,7 @@ def test_business_intelligence_separates_cancelled_and_paid_order_value(session)
     assert summary["order_value_marked_paid_loaded"] == 50.0
     assert summary["order_status_counts"]["CANCELLED"] == 1
     assert summary["payment_status_counts"]["PAID"] == 1
-    assert summary["cancelled_order_rate_loaded"] == 1 / 3
+    assert summary["cancelled_order_rate_loaded"] == 0.3333
     assert summary["non_cancelled_orders_loaded"] == 2
     assert summary["top_ordered_products_loaded"][0]["product_name"] == "Analytics test product"
     assert summary["top_ordered_products_loaded"][0]["units_ordered"] == 2

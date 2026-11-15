@@ -63,6 +63,11 @@ def test_business_intelligence_separates_cancelled_and_paid_order_value(session)
     assert summary["order_value_marked_paid_loaded"] == 50.0
     assert summary["order_status_counts"]["CANCELLED"] == 1
     assert summary["payment_status_counts"]["PAID"] == 1
+    assert summary["cancelled_order_rate_loaded"] == 1 / 3
+    assert summary["non_cancelled_orders_loaded"] == 2
+    assert summary["top_ordered_products_loaded"][0]["product_name"] == "Analytics test product"
+    assert summary["top_ordered_products_loaded"][0]["units_ordered"] == 2
+    assert summary["recent_order_activity_loaded"]
     assert "not verified revenue" in summary["data_note"]
 
 
@@ -223,3 +228,67 @@ def test_customer_assistant_includes_recent_conversation_in_gemini_prompt(
     assert "customer: Around 1,000." in captured["prompt"]
     assert "Request: It should have good battery life." in captured["prompt"]
     assert "Treat customer messages" in captured["prompt"]
+
+
+def test_product_discovery_fallback_respects_budget_and_ignores_filler(session, monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    available = get_lookup(session, ProductStatus, "AVAILABLE")
+    products = [
+        Product(
+            name="Business laptop", price=Decimal("700.00"), quantity=3,
+            description="Portable computer for office and study", product_status_record=available,
+        ),
+        Product(
+            name="Premium laptop", price=Decimal("1200.00"), quantity=2,
+            description="High performance portable computer", product_status_record=available,
+        ),
+        Product(
+            name="Wireless headphones", price=Decimal("80.00"), quantity=4,
+            description="Bluetooth audio headset", product_status_record=available,
+        ),
+    ]
+    session.add_all(products)
+    session.commit()
+
+    result = run_agent(
+        "product_discovery",
+        "Please recommend a laptop under $800",
+        session,
+    )
+
+    assert "Business laptop" in result["answer"]
+    assert "Premium laptop" not in result["answer"]
+    assert "Wireless headphones" not in result["answer"]
+
+
+def test_product_discovery_gemini_context_excludes_unavailable_products(session, monkeypatch):
+    import services.ai_agents as ai_agents
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    available = get_lookup(session, ProductStatus, "AVAILABLE")
+    empty = get_lookup(session, ProductStatus, "EMPTY")
+    session.add_all([
+        Product(
+            name="Available laptop", price=Decimal("700.00"), quantity=2,
+            product_status_record=available,
+        ),
+        Product(
+            name="Unavailable laptop", price=Decimal("600.00"), quantity=0,
+            product_status_record=empty,
+        ),
+    ])
+    session.commit()
+    captured = {}
+
+    def capture_prompt(api_key, model, prompt):
+        captured["prompt"] = prompt
+        return "Available laptop is a catalogue match."
+
+    monkeypatch.setattr(ai_agents, "_generate_with_gemini", capture_prompt)
+    result = run_agent("product_discovery", "Find a laptop", session)
+
+    assert result["answer"] == "Available laptop is a catalogue match."
+    assert "Available laptop" in captured["prompt"]
+    assert "Unavailable laptop" not in captured["prompt"]

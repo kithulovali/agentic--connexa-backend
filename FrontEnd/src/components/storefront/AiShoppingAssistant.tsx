@@ -11,7 +11,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { AgentResponse, ProductOut } from '../../types';
+import { AgentConversationMessage, AgentResponse, ProductOut } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { useCartStore } from '../../store/useCartStore';
 
@@ -86,8 +86,19 @@ export const AiShoppingAssistant: React.FC<AiShoppingAssistantProps> = ({
     setLoading(true);
 
     try {
-      // Send question to customer shopping assistant
-      const response: AgentResponse = await api.askCustomerShoppingAssistant(promptText);
+      // Send the previous customer/store turns so follow-up questions retain context.
+      const conversationHistory: AgentConversationMessage[] = messages
+        .filter((message) => message.id !== 'welcome')
+        .slice(-8)
+        .map((message) => ({
+          role: message.sender === 'user' ? 'customer' : 'store',
+          content: message.text.slice(0, 4000),
+        }));
+
+      const response: AgentResponse = await api.askCustomerShoppingAssistant(
+        promptText,
+        conversationHistory
+      );
 
       // Check if user is asking for recommendations to enrich response
       let recs: ProductOut[] | undefined = undefined;

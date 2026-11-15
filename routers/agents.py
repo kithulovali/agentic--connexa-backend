@@ -88,7 +88,15 @@ def customer_shopping_assistant(
     """Answer shopping questions from available catalogue data; never invent product facts."""
     client_ip = request.client.host if request.client else "unknown"
     _enforce_discovery_limit(client_ip)
-    return run_agent("customer_shopping_assistant", payload.question, db)
+    return run_agent(
+        "customer_shopping_assistant",
+        payload.question,
+        db,
+        conversation_history=[
+            {"role": item.role, "content": item.content}
+            for item in payload.conversation_history
+        ],
+    )
 
 
 @router.post(

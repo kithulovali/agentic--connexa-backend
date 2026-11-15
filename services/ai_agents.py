@@ -302,7 +302,7 @@ def run_agent(agent: str, question: str, db: Session, conversation_history: list
             "data_summary": context["summary"],
         }
 
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     agent_instructions = _load_agent_prompt(agent)
     history_block = ""
     if agent == "customer_shopping_assistant" and conversation_history:

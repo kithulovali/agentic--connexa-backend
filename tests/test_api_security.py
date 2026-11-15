@@ -317,3 +317,41 @@ def test_order_status_endpoint_rejects_payment_status_mutation(client, session):
 
     assert response.status_code == 422
     assert session.get(type(order), order.id).payment_status == "NOT YET PAID"
+
+
+def test_storefront_recommendations_use_product_discovery_agent(
+    client, monkeypatch
+):
+    import routers.ai as ai_router
+
+    captured = {}
+
+    def capture_agent(agent, question, db):
+        captured["agent"] = agent
+        captured["question"] = question
+        return {"answer": "I found catalogue matches for your request."}
+
+    monkeypatch.setattr(ai_router, "run_agent", capture_agent)
+    response = client.post(
+        "/api/v1/ai/recommend",
+        json={
+            "query": "Find a laptop for university",
+            "max_budget": 800,
+            "preferred_category": "Computers",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["ai_advice"] == "I found catalogue matches for your request."
+    assert captured["agent"] == "product_discovery"
+    assert "Maximum budget: 800" in captured["question"]
+    assert "Preferred category: Computers" in captured["question"]
+
+
+def test_product_discovery_rejects_oversized_queries(client):
+    response = client.post(
+        "/api/v1/ai/recommend",
+        json={"query": "l" * 1001},
+    )
+
+    assert response.status_code == 422

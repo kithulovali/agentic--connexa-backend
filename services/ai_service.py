@@ -55,14 +55,19 @@ def get_electronics_recommendations(
             scored_products.append((score, prod))
 
     scored_products.sort(key=lambda item: (-item[0], Decimal(str(item[1].price)), item[1].id))
+    # Do not fill an empty match set with unrelated products. Recommendations
+    # must satisfy the user's query, availability, and any supplied budget.
     recommended = [product for _, product in scored_products[:5]]
-    if not recommended and all_products:
-        recommended = all_products[:3]
 
     advice = (
         f"Based on your requirements for '{query}'"
         + (f" with a maximum budget of {max_budget}" if max_budget is not None else "")
-        + f", we matched {len(recommended)} available electronics option(s)."
+        + (
+            f", we matched {len(recommended)} available electronics option(s)."
+            if recommended
+            else ", no matching available products were found. Try another feature, "
+                 "category, or budget."
+        )
     )
     return {
         "query": query,

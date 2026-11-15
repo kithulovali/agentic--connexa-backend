@@ -121,6 +121,8 @@ def get_electronics_recommendations(
 
 def smart_search_electronics(session: Session, query: str) -> Dict[str, Any]:
     expanded_terms = _expanded_terms(query)
+    if not expanded_terms:
+        return {"query": query, "total_matches": 0, "matches": []}
     statement = (
         select(Product)
         .join(Product.product_status_record)

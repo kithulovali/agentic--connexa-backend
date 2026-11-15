@@ -260,6 +260,13 @@ export const api = {
     });
   },
 
+  async verifyOrderPayment(payload: PaymentCreate): Promise<PaymentOut> {
+    return request<PaymentOut>('/payments/admin/verify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   async getPayment(paymentId: number): Promise<PaymentOut> {
     return request<PaymentOut>(`/payments/${paymentId}`);
   },

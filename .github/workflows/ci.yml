@@ -1,4 +1,4 @@
-name: Python CI
+name: CI
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: Backend tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -27,3 +28,21 @@ jobs:
           GOOGLE_API_KEY: ""
           GEMINI_API_KEY: ""
         run: python -m pytest -q -W error::starlette.exceptions.StarletteDeprecationWarning
+
+  frontend-build:
+    name: Frontend TypeScript and Vite build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FrontEnd
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build frontend
+        run: npm run build

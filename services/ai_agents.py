@@ -301,14 +301,18 @@ def _fallback(agent: str, question: str, context: dict[str, Any]) -> str:
         )
     if agent == "growth_optimization":
         return (
-            "Initial growth recommendations based on the currently loaded records:\n"
+            "Initial growth review based on the currently loaded records:\n"
             f"- Catalogue products loaded: {s['catalogue_products']}.\n"
             f"- Orders loaded: {s['orders_loaded']}.\n"
+            f"- Non-cancelled orders in sample: {s['non_cancelled_orders_loaded']}.\n"
+            f"- Cancelled order rate in sample: {s['cancelled_order_rate_loaded']:.1%}.\n"
             f"- Loaded order value (not verified revenue): {s['order_value_loaded']:.2f}.\n"
             f"- Low-stock products (quantity <= 5): {len(s['low_stock_products_threshold_5'])}.\n"
-            "Prioritize accurate product listings, stock visibility, and tracking enquiries, "
-            "orders, and campaign outcomes. Do not claim predictive accuracy or causal uplift "
-            "without sufficient dated sales and campaign data. "
+            f"- Most ordered products in sample: {s['top_ordered_products_loaded']}.\n"
+            f"- Recent dated order activity in sample: {s['recent_order_activity_loaded']}.\n"
+            "Prioritize reviewing products with repeated non-cancelled orders and low stock, "
+            "checking cancelled-order causes, and improving product information and enquiry tracking. "
+            "These observations are descriptive, not proof of demand growth or marketing impact. "
             + s["data_note"]
         )
     terms = [t for t in question.lower().split() if len(t) > 3]

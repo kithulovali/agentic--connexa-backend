@@ -110,6 +110,35 @@ def _collect_context(db: Session, include_orders: bool = True) -> dict[str, Any]
     cancelled_orders = [o for o in orders_data if o["order_status"] == "CANCELLED"]
     non_cancelled_orders = [o for o in orders_data if o["order_status"] != "CANCELLED"]
     paid_orders = [o for o in orders_data if o["payment_status"] == "PAID"]
+    product_names = {p["id"]: p["name"] for p in catalogue}
+    product_performance: dict[Any, dict[str, Any]] = {}
+    dated_activity: dict[str, dict[str, Any]] = {}
+    for order in non_cancelled_orders:
+        product_id = order["product_id"]
+        if product_id is not None:
+            performance = product_performance.setdefault(
+                product_id,
+                {"product_id": product_id, "product_name": product_names.get(product_id, "Unknown product"),
+                 "orders": 0, "units_ordered": 0, "order_value": 0.0},
+            )
+            performance["orders"] += 1
+            performance["units_ordered"] += order["quantity"]
+            performance["order_value"] = round(performance["order_value"] + order["total_price"], 2)
+        ordered_at = str(order["ordered_at"] or "")
+        date_key = ordered_at[:10] if len(ordered_at) >= 10 else "date-unavailable"
+        activity = dated_activity.setdefault(
+            date_key, {"date": date_key, "orders": 0, "units_ordered": 0, "order_value": 0.0}
+        )
+        activity["orders"] += 1
+        activity["units_ordered"] += order["quantity"]
+        activity["order_value"] = round(activity["order_value"] + order["total_price"], 2)
+    top_ordered_products = sorted(
+        product_performance.values(),
+        key=lambda item: (-item["units_ordered"], -item["orders"]),
+    )[:8]
+    recent_order_activity = [
+        dated_activity[key] for key in sorted(dated_activity, reverse=True)[:14]
+    ]
     summary = {
         "catalogue_products": len(catalogue),
         "orders_loaded": len(orders_data),
@@ -124,6 +153,11 @@ def _collect_context(db: Session, include_orders: bool = True) -> dict[str, Any]
             sum(o["total_price"] for o in paid_orders), 2
         ),
         "units_ordered_loaded": sum(o["quantity"] for o in orders_data),
+        "non_cancelled_orders_loaded": len(non_cancelled_orders),
+        "cancelled_order_rate_loaded": round(len(cancelled_orders) / len(orders_data), 4) if orders_data else 0.0,
+        "paid_orders_loaded": len(paid_orders),
+        "top_ordered_products_loaded": top_ordered_products,
+        "recent_order_activity_loaded": recent_order_activity,
         "order_status_counts": {
             status: sum(o["order_status"] == status for o in orders_data)
             for status in sorted({o["order_status"] for o in orders_data})
@@ -163,19 +197,58 @@ def _fallback(agent: str, question: str, context: dict[str, Any]) -> str:
             f"Set GOOGLE_API_KEY to enable Gemini analysis. Request: {question}"
         )
     if agent == "product_discovery":
-        terms = [t for t in question.lower().replace(",", " ").split() if len(t) > 2]
-        matches = [
-            p for p in context["catalogue"]
-            if p["quantity"] > 0 and p["status"] == "AVAILABLE"
-            and any(t in (p["name"] + " " + p["description"]).lower() for t in terms)
-        ][:8]
+        import re
+        stop_words = {
+            "a", "an", "and", "are", "best", "for", "find", "give", "i", "in",
+            "is", "looking", "me", "of", "on", "or", "please", "recommend",
+            "show", "the", "to", "want", "what", "with",
+        }
+        terms = [
+            term for term in re.findall(r"[a-z0-9]+", question.lower())
+            if len(term) > 2 and term not in stop_words and not term.isdigit()
+        ]
+        budget_match = re.search(
+            r"\\b(?:under|below|less than|up to|maximum|max|budget(?: of)?)"
+            r"\\s*[:=]?\\s*[$€£]?\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+            question,
+            re.IGNORECASE,
+        )
+        maximum_budget = (
+            float(budget_match.group(1).replace(",", "")) if budget_match else None
+        )
+        synonym_groups = {
+            "laptop": {"laptop", "notebook", "computer", "macbook", "thinkpad"},
+            "phone": {"phone", "smartphone", "mobile", "iphone", "android"},
+            "headphones": {"headphone", "headphones", "earphone", "earphones", "earbud", "earbuds"},
+            "speaker": {"speaker", "speakers", "audio", "sound"},
+            "monitor": {"monitor", "display", "screen"},
+        }
+        expanded_terms = set(terms)
+        for group in synonym_groups.values():
+            if expanded_terms.intersection(group):
+                expanded_terms.update(group)
+        ranked_matches = []
+        for product in context["catalogue"]:
+            if product["quantity"] <= 0 or product["status"] != "AVAILABLE":
+                continue
+            if maximum_budget is not None and product["price"] > maximum_budget:
+                continue
+            product_text = (product["name"] + " " + product["description"]).lower()
+            matched_terms = [term for term in expanded_terms if term in product_text]
+            if matched_terms:
+                ranked_matches.append((len(matched_terms), product))
+        ranked_matches.sort(
+            key=lambda item: (-item[0], item[1]["price"], item[1]["name"].lower())
+        )
+        matches = [product for _, product in ranked_matches[:5]]
         return (
-            "\n".join(
+            "\\n".join(
                 f"- {p['name']} | price {p['price']:.2f} | stock {p['quantity']}"
                 for p in matches
             )
             if matches
-            else "No clear matches in the available catalogue. Try a product type, feature, or budget."
+            else "No suitable products matched the stated needs and budget in the available catalogue. "
+                 "Ask the shopper to broaden the product type, feature, or budget."
         )
     if agent == "image_studio":
         terms = [t for t in question.lower().replace(",", " ").split() if len(t) > 2]
@@ -286,6 +359,15 @@ def run_agent(agent: str, question: str, db: Session, conversation_history: list
     context = _collect_context(
         db, include_orders=(agent in {"business_intelligence", "growth_optimization"})
     )
+    if agent == "product_discovery":
+        # Exclude unavailable items from the model context, not just the prompt rules.
+        context = {
+            **context,
+            "catalogue": [
+                product for product in context["catalogue"]
+                if product["status"] == "AVAILABLE" and product["quantity"] > 0
+            ],
+        }
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     fallback_question = question
     if agent == "customer_shopping_assistant" and conversation_history:

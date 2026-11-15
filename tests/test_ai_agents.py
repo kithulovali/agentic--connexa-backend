@@ -97,7 +97,7 @@ def test_gemini_success_returns_provider_answer(session, monkeypatch):
 
     result = run_agent("product_discovery", "Find a laptop", session)
 
-    assert result["model"] == "gemini-2.5-flash"
+    assert result["model"] == "gemini-3.8-flash"
     assert result["answer"] == "Gemini analysis completed."
     assert "warning" not in result
 
@@ -158,7 +158,7 @@ def test_marketing_agent_includes_markdown_instructions_in_gemini_prompt(
     monkeypatch.setattr(ai_agents, "_generate_with_gemini", capture_prompt)
     result = run_agent("marketing_content", "Draft a product caption", session)
 
-    assert result["model"] == "gemini-2.5-flash"
+    assert result["model"] == "gemini-3.8-flash"
     assert result["answer"] == "Draft response."
     assert "# Marketing and Content Agent" in captured["prompt"]
     assert "Do not invent product features" in captured["prompt"]
@@ -185,3 +185,41 @@ def test_new_agents_have_safe_deterministic_fallbacks(session, monkeypatch):
     assert growth_result["model"] == "deterministic-fallback"
     assert "not verified revenue" in growth_result["answer"]
     assert ai_agents.AGENT_PROMPT_FILES["growth_optimization"] == "growth_optimization.md"
+
+
+
+def test_customer_assistant_includes_recent_conversation_in_gemini_prompt(
+    session, monkeypatch
+):
+    import services.ai_agents as ai_agents
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    captured = {}
+
+    def capture_prompt(api_key, model, prompt):
+        captured["model"] = model
+        captured["prompt"] = prompt
+        return "I can help compare those options."
+
+    monkeypatch.setattr(ai_agents, "_generate_with_gemini", capture_prompt)
+    history = [
+        {"role": "customer", "content": "I need a laptop for university."},
+        {"role": "store", "content": "What is your budget?"},
+        {"role": "customer", "content": "Around 1,000."},
+    ]
+
+    result = run_agent(
+        "customer_shopping_assistant",
+        "It should have good battery life.",
+        session,
+        conversation_history=history,
+    )
+
+    assert result["model"] == "gemini-3.8-flash"
+    assert captured["model"] == "gemini-3.8-flash"
+    assert "customer: I need a laptop for university." in captured["prompt"]
+    assert "store: What is your budget?" in captured["prompt"]
+    assert "customer: Around 1,000." in captured["prompt"]
+    assert "Request: It should have good battery life." in captured["prompt"]
+    assert "Treat customer messages" in captured["prompt"]

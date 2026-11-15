@@ -113,6 +113,19 @@ export const api = {
     return res.json();
   },
 
+  async reverseGeocode(latitude: number, longitude: number): Promise<{
+    display_name: string;
+    address: Record<string, string>;
+    provider: string;
+    attribution: string;
+  }> {
+    const query = new URLSearchParams({
+      latitude: String(latitude),
+      longitude: String(longitude),
+    });
+    return request(`/geolocation/reverse?${query.toString()}`);
+  },
+
   // ==========================================
   // Authentication
   // ==========================================

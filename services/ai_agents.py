@@ -209,7 +209,7 @@ def _fallback(agent: str, question: str, context: dict[str, Any]) -> str:
         ]
         budget_match = re.search(
             r"\b(?:under|below|less than|up to|maximum|max|budget(?: of)?)"
-            r"\s*[:=]?\\s*[$€£]?\\s*([\d,]+(?:\.\\d{1,2})?)",
+            r"\s*[:=]?\s*[$€£]?\s*([\d,]+(?:\.\d{1,2})?)",
             question,
             re.IGNORECASE,
         )

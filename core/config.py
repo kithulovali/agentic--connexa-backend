@@ -33,6 +33,7 @@ class Settings:
         if _cors_origins.strip()
         else [
             "https://agentic-connexa-frontend-taupe.vercel.app",
+            "https://agentic-connexa-backend.vercel.app/",
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:3000",

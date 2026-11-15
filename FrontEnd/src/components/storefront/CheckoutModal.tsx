@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   CreditCard,
@@ -30,6 +30,71 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const { user, isAuthenticated } = useAuthStore();
 
   const [address, setAddress] = useState('');
+  const [locationStatus, setLocationStatus] = useState<'detecting' | 'success' | 'error'>('detecting');
+
+  useEffect(() => {
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('error');
+      return;
+    }
+
+    let cancelled = false;
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const params = new URLSearchParams({
+            latitude: String(coords.latitude),
+            longitude: String(coords.longitude),
+            localityLanguage: 'en',
+          });
+          const response = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?${params.toString()}`
+          );
+
+          if (!response.ok) throw new Error('Reverse geocoding failed');
+
+          const place = await response.json();
+          const locality =
+            place.city ||
+            place.locality ||
+            place.principalSubdivision ||
+            '';
+          const addressParts = [
+            place.localityInfo?.administrative?.[0]?.name,
+            locality,
+            place.principalSubdivision,
+            place.countryName,
+          ].filter((part, index, all) => Boolean(part) && all.indexOf(part) === index);
+
+          if (!cancelled && addressParts.length > 0) {
+            setAddress((currentAddress) =>
+              currentAddress.trim() ? currentAddress : addressParts.join(', ')
+            );
+            setLocationStatus('success');
+          } else if (!cancelled) {
+            setLocationStatus('error');
+          }
+        } catch (error) {
+          console.error('Address lookup failed:', error);
+          if (!cancelled) setLocationStatus('error');
+        }
+      },
+      (error) => {
+        console.warn('Geolocation unavailable:', error.message);
+        if (!cancelled) setLocationStatus('error');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000,
+      }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [contact, setContact] = useState(user?.contact || '');
   const [paymentMethod, setPaymentMethod] = useState<'BANK' | 'MOBILE MONEY' | 'CRYPTO'>('BANK');
 
@@ -205,9 +270,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Street, Suite / Apt, City, Country"
+                  placeholder={
+                    locationStatus === 'detecting'
+                      ? 'Detecting your location...'
+                      : 'Street, Suite / Apt, City, Country'
+                  }
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
+                <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400" aria-live="polite">
+                  {locationStatus === 'detecting' && 'Requesting location permission and finding your address...'}
+                  {locationStatus === 'success' && 'Address detected from your device location. You can edit it if needed.'}
+                  {locationStatus === 'error' && 'Could not detect your location. Enter your delivery address manually.'}
+                </p>
               </div>
 
               <div>

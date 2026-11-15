@@ -119,8 +119,14 @@ export interface PaymentOut {
 // AI Assistant & Agent Types
 // ==========================================
 
+export interface AgentConversationMessage {
+  role: 'customer' | 'store';
+  content: string;
+}
+
 export interface AgentRequest {
   question: string;
+  conversation_history?: AgentConversationMessage[];
 }
 
 export interface AgentResponse {

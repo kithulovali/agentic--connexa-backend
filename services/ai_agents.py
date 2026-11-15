@@ -360,14 +360,20 @@ def run_agent(agent: str, question: str, db: Session, conversation_history: list
         db, include_orders=(agent in {"business_intelligence", "growth_optimization"})
     )
     if agent == "product_discovery":
-        # Exclude unavailable items from the model context, not just the prompt rules.
-        context = {
-            **context,
-            "catalogue": [
-                product for product in context["catalogue"]
-                if product["status"] == "AVAILABLE" and product["quantity"] > 0
+        # Exclude unavailable items from every model-visible catalogue field,
+        # not just the primary catalogue list.
+        available_catalogue = [
+            product for product in context["catalogue"]
+            if product["status"] == "AVAILABLE" and product["quantity"] > 0
+        ]
+        summary = {
+            **context["summary"],
+            "low_stock_products_threshold_5": [
+                product for product in available_catalogue if product["quantity"] <= 5
             ],
+            "out_of_stock_products": [],
         }
+        context = {**context, "catalogue": available_catalogue, "summary": summary}
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     fallback_question = question
     if agent == "customer_shopping_assistant" and conversation_history:

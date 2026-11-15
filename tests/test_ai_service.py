@@ -29,3 +29,24 @@ def test_ai_shopping_search_and_recommendations_exclude_out_of_stock(session):
     assert [p.id for p in search["matches"]] == [available.id]
     assert search["total_matches"] == 1
     assert [p.id for p in recommendations["recommendations"]] == [available.id]
+
+
+
+def test_recommendations_do_not_return_unrelated_products(session):
+    available_status = get_lookup(session, ProductStatus, "AVAILABLE")
+    product = Product(
+        name="Business laptop",
+        price=Decimal("700.00"),
+        quantity=5,
+        description="Portable computer for office work",
+        product_status_record=available_status,
+    )
+    session.add(product)
+    session.commit()
+
+    result = get_electronics_recommendations(
+        session, "noise cancelling headphones"
+    )
+
+    assert result["recommendations"] == []
+    assert "no matching available products were found" in result["ai_advice"]

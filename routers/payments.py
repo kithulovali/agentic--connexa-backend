@@ -57,6 +57,11 @@ def verify_order_payment(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Order #{payload.order_id} is already marked as paid",
         )
+    if order.order_status == "CANCELLED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cancelled orders cannot be marked as paid",
+        )
     if payload.payment_method != order.payment_method:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

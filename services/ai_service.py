@@ -30,8 +30,8 @@ _SEARCH_STOP_WORDS = {
 def _query_terms(query: str) -> set[str]:
     """Return meaningful shopping terms without filler, currency, or budget numbers."""
     return {
-        term for term in re.findall(r"[a-z]+", query.lower())
-        if len(term) > 1 and term not in _SEARCH_STOP_WORDS
+        term for term in re.findall(r"[a-z0-9]+", query.lower())
+        if len(term) > 1 and not term.isdigit() and term not in _SEARCH_STOP_WORDS
     }
 
 

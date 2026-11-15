@@ -6,5 +6,6 @@ from .payments import router as payments_router
 from .ai import router as ai_router
 from .agents import router as agents_router
 from .platforms import router as platforms_router
+from .geolocation import router as geolocation_router
 
-__all__ = ["auth_router", "users_router", "products_router", "orders_router", "payments_router", "ai_router", "agents_router", "platforms_router"]
+__all__ = ["auth_router", "users_router", "products_router", "orders_router", "payments_router", "ai_router", "agents_router", "platforms_router", "geolocation_router"]

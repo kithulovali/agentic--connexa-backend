@@ -13,6 +13,7 @@ import {
   PaymentCreate,
   PaymentOut,
   AgentRequest,
+  AgentConversationMessage,
   AgentResponse,
   AIRecommendationQuery,
   AIRecommendationResponse,
@@ -273,8 +274,14 @@ export const api = {
     return request<AISmartSearchResponse>(`/ai/smart-search?q=${encodeURIComponent(q)}`);
   },
 
-  async askCustomerShoppingAssistant(question: string): Promise<AgentResponse> {
-    const payload: AgentRequest = { question };
+  async askCustomerShoppingAssistant(
+    question: string,
+    conversationHistory: AgentConversationMessage[] = []
+  ): Promise<AgentResponse> {
+    const payload: AgentRequest = {
+      question,
+      conversation_history: conversationHistory,
+    };
     return request<AgentResponse>('/ai/agents/customer-shopping-assistant', {
       method: 'POST',
       body: JSON.stringify(payload),

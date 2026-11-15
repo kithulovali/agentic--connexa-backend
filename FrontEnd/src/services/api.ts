@@ -26,8 +26,13 @@ import {
 
 const LOCAL_BACKEND_URL = 'http://127.0.0.1:8000';
 const CLOUD_BACKEND_URL = 'https://agentic-connexa-backend.onrender.com';
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || LOCAL_BACKEND_URL).replace(/\/+$/, '');
-const FALLBACK_URL = BASE_URL === LOCAL_BACKEND_URL ? CLOUD_BACKEND_URL : LOCAL_BACKEND_URL;
+// Use localhost only during local Vite development. A deployed frontend must
+// never silently target the visitor's own machine when its Vercel env var is absent.
+const DEFAULT_BACKEND_URL = import.meta.env.DEV ? LOCAL_BACKEND_URL : CLOUD_BACKEND_URL;
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_BACKEND_URL).replace(/\/+$/, '');
+const FALLBACK_URL = import.meta.env.DEV && BASE_URL === LOCAL_BACKEND_URL
+  ? CLOUD_BACKEND_URL
+  : null;
 const API_PREFIX = '/api/v1';
 
 export class ApiError extends Error {
@@ -65,7 +70,11 @@ async function request<T>(
       headers,
     });
   } catch (networkErr) {
-    // Automatic fallback if primary backend is unreachable
+    // In local development, retry against Render if localhost is unavailable.
+    // In production, never retry against 127.0.0.1 on the visitor's device.
+    if (!FALLBACK_URL) {
+      throw networkErr;
+    }
     response = await fetch(`${FALLBACK_URL}${API_PREFIX}${endpoint}`, {
       ...options,
       headers,

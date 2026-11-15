@@ -100,20 +100,39 @@ export const AiShoppingAssistant: React.FC<AiShoppingAssistantProps> = ({
         conversationHistory
       );
 
-      // Check if user is asking for recommendations to enrich response
+      // Attach catalogue-backed product cards for recommendation requests and
+      // contextual follow-ups such as "show me a cheaper one".
       let recs: ProductOut[] | undefined = undefined;
-      if (
-        promptText.toLowerCase().includes('recommend') ||
-        promptText.toLowerCase().includes('best') ||
-        promptText.toLowerCase().includes('budget')
-      ) {
+      const normalizedPrompt = promptText.toLowerCase();
+      const recommendationIntent =
+        /\\b(recommend|recommendation|best|budget|cheaper|cheapest|affordable|compare|comparison|alternative|similar|options?|in stock|available)\\b/.test(
+          normalizedPrompt
+        ) ||
+        (conversationHistory.length > 0 &&
+          /\\b(what about|show me|another|lower price|less expensive|that one|those)\\b/.test(
+            normalizedPrompt
+          ));
+
+      if (recommendationIntent) {
         try {
-          const recRes = await api.getAiRecommendations({ query: promptText });
+          // Include earlier customer and assistant turns so a short follow-up
+          // retains the product category and requirements from the discussion.
+          const recommendationQuery = [
+            ...conversationHistory.map((message) => message.content),
+            promptText,
+          ]
+            .join(' ')
+            .replace(/\\s+/g, ' ')
+            .slice(-1200);
+
+          const recRes = await api.getAiRecommendations({
+            query: recommendationQuery,
+          });
           if (recRes && recRes.recommendations?.length > 0) {
             recs = recRes.recommendations.slice(0, 3);
           }
         } catch {
-          // Non-blocking fallback
+          // Product cards are optional; keep the assistant's text response.
         }
       }
 

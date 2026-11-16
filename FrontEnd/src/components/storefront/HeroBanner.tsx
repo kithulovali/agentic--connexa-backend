@@ -10,6 +10,7 @@ import {
   Tag,
   Laptop,
   ShoppingBag,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface HeroBannerProps {

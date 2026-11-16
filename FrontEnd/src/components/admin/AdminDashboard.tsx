@@ -125,7 +125,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // ==========================================
   // AI Enterprise Studio State
   // ==========================================
-  const [aiAgentType, setAiAgentType] = useState<'BI' | 'GROWTH' | 'MARKETING' | 'IMAGE_STUDIO'>('BI');
+  const [aiAgentType, setAiAgentType] = useState<'BI' | 'PRODUCT_DISCOVERY' | 'GROWTH' | 'MARKETING' | 'IMAGE_STUDIO'>('BI');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState<AgentResponse | null>(null);
@@ -362,6 +362,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       let res: AgentResponse;
       if (aiAgentType === 'BI') {
         res = await api.getBusinessIntelligence(aiPrompt.trim());
+        setAiResponse(res);
+      } else if (aiAgentType === 'PRODUCT_DISCOVERY') {
+        res = await api.askProductDiscovery(aiPrompt.trim());
         setAiResponse(res);
       } else if (aiAgentType === 'GROWTH') {
         res = await api.getGrowthOptimization(aiPrompt.trim());
@@ -1434,17 +1437,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 font-heading">
                     <Sparkles className="w-5 h-5 text-accent-500" />
-                    <span>AI Enterprise Decision & Marketing Studio</span>
+                    <span>AI Enterprise & Product Discovery Studio</span>
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Query business intelligence, growth optimization, promotional copy, and render base64 imagery.
+                    Explore catalogue-grounded product discovery, business intelligence, growth optimization, marketing content, and image generation.
                   </p>
                 </div>
 
                 {/* Sub-Agent Selector */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
                   {[
                     { id: 'BI', title: 'Business Intelligence', desc: 'Margins & revenue metrics', icon: TrendingUp },
+                    { id: 'PRODUCT_DISCOVERY', title: 'Product Discovery', desc: 'Catalogue-grounded matching', icon: Search },
                     { id: 'GROWTH', title: 'Growth Optimization', desc: 'Restocking & inventory scaling', icon: DollarSign },
                     { id: 'MARKETING', title: 'Marketing Content', desc: 'Ad copy & campaign drafts', icon: MessageSquare },
                     { id: 'IMAGE_STUDIO', title: 'Image Studio', desc: 'Visual prompt & base64 render', icon: ImageIcon },
@@ -1476,7 +1480,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <form onSubmit={handleRunAiAgent} className="p-5 rounded-2xl bg-white dark:bg-urban-dark border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
                   <div>
                     <label className="text-xs font-bold text-slate-900 dark:text-white block mb-1">
-                      Prompt for {aiAgentType} Agent:
+                      Prompt for {aiAgentType === 'PRODUCT_DISCOVERY' ? 'Product Discovery' : aiAgentType} Agent:
                     </label>
                     <textarea
                       rows={3}
@@ -1486,6 +1490,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       placeholder={
                         aiAgentType === 'BI'
                           ? 'What are our top revenue generators and category margins this month?'
+                          : aiAgentType === 'PRODUCT_DISCOVERY'
+                          ? 'Recommend available products for a customer looking for a reliable laptop under $800.'
                           : aiAgentType === 'GROWTH'
                           ? 'Which electronics should we restock first based on customer order volume?'
                           : aiAgentType === 'MARKETING'
@@ -1510,7 +1516,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ) : (
                         <>
                           <Bot className="w-4 h-4" />
-                          <span>Run {aiAgentType} Agent</span>
+                          <span>Run {aiAgentType === 'PRODUCT_DISCOVERY' ? 'Product Discovery' : aiAgentType} Agent</span>
                         </>
                       )}
                     </button>

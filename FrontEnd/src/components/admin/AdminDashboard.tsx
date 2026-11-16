@@ -229,11 +229,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       avgOrderValue,
       stock: totalHardwareStock,
       totalProducts: products.length,
-      customers: users.length || 1,
+      customers: users.length,
     };
   }, [orders, products, users]);
 
-  // Top selling products (based on inventory or mock sales rank)
+  // Inventory ordering based on database stock quantities
   const topProducts = useMemo(() => {
     return [...products]
       .sort((a, b) => (b.quantity || 0) - (a.quantity || 0))
@@ -761,114 +761,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* Middle Row: Sales Over Time (Chart) & Top Selling Product */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Sales Overtime Curve Chart (2 cols) */}
-                  <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-urban-dark border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                        Sales Overtime
-                      </h3>
-
-                      <div className="flex items-center gap-4 text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-brand-500" />
-                          <span className="text-slate-600 dark:text-slate-400 text-xs">Revenue</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-sky-500" />
-                          <span className="text-slate-600 dark:text-slate-400 text-xs">Order</span>
-                        </div>
-                        <button
-                          className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
-                          title="Chart Options"
-                        >
-                          <MenuIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Interactive SVG Curve Chart with Tooltip Box (Matching Reference 1) */}
-                    <div className="relative w-full h-52 sm:h-60 pt-4">
-                      {/* Floating Average Indicator Box (Reference 1) */}
-                      <div className="absolute top-12 left-1/3 z-10 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg text-[10px] space-y-0.5 pointer-events-none">
-                        <div className="font-bold text-slate-800 dark:text-slate-200">Average</div>
-                        <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400 font-mono">
-                          <span>• Aug 2023</span>
-                          <span className="font-bold">14.8k</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-mono">
-                          <span>• Aug 2023</span>
-                          <span className="font-bold">10.8k</span>
-                        </div>
-                      </div>
-
-                      <svg
-                        className="w-full h-full overflow-visible"
-                        viewBox="0 0 500 150"
-                        preserveAspectRatio="none"
-                      >
-                        <defs>
-                          <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#D4A900" stopOpacity="0.25" />
-                            <stop offset="100%" stopColor="#D4A900" stopOpacity="0.0" />
-                          </linearGradient>
-                          <linearGradient id="orderGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.20" />
-                            <stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.0" />
-                          </linearGradient>
-                        </defs>
-
-                        {/* Y-axis Ticks (20k, 15k, 10k, 5k, 0) */}
-                        <line x1="0" y1="20" x2="500" y2="20" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
-                        <line x1="0" y1="55" x2="500" y2="55" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
-                        <line x1="0" y1="90" x2="500" y2="90" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
-                        <line x1="0" y1="125" x2="500" y2="125" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
-
-                        {/* Dotted vertical reference indicator for August */}
-                        <line x1="180" y1="0" x2="180" y2="140" stroke="#D4A900" strokeDasharray="2 2" strokeOpacity="0.5" />
-
-                        {/* Revenue Curve & Area */}
-                        <path
-                          d="M0,115 C70,125 120,45 180,90 C240,135 320,35 400,65 C450,85 480,35 500,45 L500,150 L0,150 Z"
-                          fill="url(#revenueGrad)"
-                        />
-                        <path
-                          d="M0,115 C70,125 120,45 180,90 C240,135 320,35 400,65 C450,85 480,35 500,45"
-                          fill="none"
-                          stroke="#D4A900"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                        />
-
-                        {/* Orders Curve */}
-                        <path
-                          d="M0,95 C60,110 130,120 180,75 C230,30 300,85 380,45 C430,20 470,80 500,60 L500,150 L0,150 Z"
-                          fill="url(#orderGrad)"
-                        />
-                        <path
-                          d="M0,95 C60,110 130,120 180,75 C230,30 300,85 380,45 C430,20 470,80 500,60"
-                          fill="none"
-                          stroke="#0EA5E9"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </div>
-
-                    <div className="flex justify-between text-[11px] font-mono text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                      <span>Jun</span>
-                      <span>Jul</span>
-                      <span>Aug</span>
-                      <span>Sep</span>
-                      <span>Oct</span>
-                      <span>Nov</span>
-                      <span>Dec</span>
-                      <span>Jan</span>
-                    </div>
-                  </div>
-
-                  {/* Top Selling Product Card (Matching Reference 1) */}
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Inventory Snapshot Card (Matching Reference 1) */}
                   <div className="p-6 rounded-2xl bg-white dark:bg-urban-dark border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold text-sm text-slate-900 dark:text-white">
@@ -883,7 +777,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </button>
                     </div>
 
-                    {/* Top Products List (Live API Grounded) */}
+                    {/* Products ordered by current stock quantity */}
                     <div className="space-y-4">
                       {topProducts.length > 0 ? (
                         topProducts.slice(0, 3).map((p) => {
@@ -892,11 +786,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div key={p.id} className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 flex-shrink-0 border border-slate-200 dark:border-slate-800">
-                                  <img
-                                    src={p.banner_image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&q=80'}
-                                    alt={p.name}
-                                    className="w-full h-full object-cover"
-                                  />
+                                  {p.banner_image ? (
+                                    <img src={p.banner_image} alt={p.name} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <Package className="m-auto h-5 w-5 text-slate-400" />
+                                  )}
                                 </div>
                                 <div className="min-w-0">
                                   <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">

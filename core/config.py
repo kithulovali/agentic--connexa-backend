@@ -36,6 +36,7 @@ class Settings:
     _required_origins = [
         "https://agentic-connexa-frontend-guj8.vercel.app",
         "https://agentic-connexa-frontend-taupe.vercel.app",
+        "https://agentic-connexa-backend-1.onrender.com",
     ]
     _development_origins = [
         "http://localhost:3000",

@@ -13,7 +13,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenUiShowcase }) => {
           {/* Brand Info */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-500 via-brand-600 to-accent-500 p-0.5 shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-slate-200 p-0.5 shadow-sm dark:bg-slate-700">
                 <img
                   src="/urban-scenery-logo.png"
                   alt="Urban Scenery Ventures"

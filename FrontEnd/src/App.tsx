@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
-import { HeroBanner } from './components/storefront/HeroBanner';
+import { HomeView, StorefrontBenefits } from './components/storefront/HomeView';
 import { ProductGrid } from './components/storefront/ProductGrid';
 import { CartDrawer } from './components/storefront/CartDrawer';
 import { CheckoutModal } from './components/storefront/CheckoutModal';
@@ -195,14 +195,13 @@ export const App: React.FC = () => {
       <main className="flex-1">
         {currentView === 'store' || !canAccessAdmin ? (
           <>
-            <HeroBanner
+            <HomeView
+              onNavigateToShop={handleCategorySelect}
               onSearch={handleHeroSearch}
               onOpenShoppingAssistant={() =>
-                setAssistantPrompt('What are your top trending electronics this week?')
+                setAssistantPrompt('Help me find a product that fits my needs.')
               }
               onExploreProducts={handleExploreProducts}
-              onSelectCategory={handleCategorySelect}
-              onOpenAiRecommendations={() => setRecommendationModalOpen(true)}
             />
 
             <ProductGrid
@@ -210,6 +209,7 @@ export const App: React.FC = () => {
               onClearInitialSearch={() => setSearchQuery('')}
               onOpenShoppingAssistant={(prompt) => setAssistantPrompt(prompt)}
             />
+            <StorefrontBenefits />
 
             {/* Persistent AI Shopping Assistant */}
             <AiShoppingAssistant

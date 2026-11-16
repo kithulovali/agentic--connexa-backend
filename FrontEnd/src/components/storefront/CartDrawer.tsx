@@ -189,9 +189,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
                 <div className="p-3 rounded-xl bg-brand-500/5 dark:bg-brand-500/10 border border-brand-500/20 text-xs flex items-start gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-bold text-slate-900 dark:text-white text-[11px]">
-                      Live Inventory Lock Active
-                    </div>
+    
                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
                       Prices and items are verified directly against our live catalog database.
                     </div>
@@ -214,11 +212,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
                           className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800"
                         >
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-white dark:bg-slate-950 flex-shrink-0 border border-slate-200 dark:border-slate-800">
-                            <img
-                              src={p.banner_image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&q=80'}
-                              alt={p.name}
-                              className="w-full h-full object-cover"
-                            />
+                            {p.banner_image ? (
+                              <img src={p.banner_image} alt={p.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <Package className="m-auto h-5 w-5 text-slate-400" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h5 className="text-[11px] font-bold text-slate-900 dark:text-white truncate">

@@ -9,12 +9,6 @@ import {
   ChevronRight,
   AlertCircle,
   X,
-  Laptop,
-  Smartphone,
-  Headphones,
-  Monitor,
-  HardDrive,
-  Layers,
 } from 'lucide-react';
 import { ProductOut } from '../../types';
 import { api } from '../../services/api';
@@ -39,7 +33,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
   // Filters
   const [search, setSearch] = useState(initialSearchQuery);
-  const [activeCategory, setActiveCategory] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'EMPTY'>('ALL');
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
@@ -51,15 +44,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
   // QuickView modal
   const [selectedProduct, setSelectedProduct] = useState<ProductOut | null>(null);
-
-  const categories = [
-    { id: 'ALL', name: 'All Products', icon: Layers },
-    { id: 'LAPTOP', name: 'Laptops', icon: Laptop, query: 'laptop' },
-    { id: 'PHONE', name: 'Smartphones', icon: Smartphone, query: 'phone' },
-    { id: 'AUDIO', name: 'Audio & ANC', icon: Headphones, query: 'audio' },
-    { id: 'MONITOR', name: 'Displays', icon: Monitor, query: 'monitor' },
-    { id: 'ACCESSORY', name: 'Accessories', icon: HardDrive, query: 'usb' },
-  ];
 
   // Sync external search query
   useEffect(() => {
@@ -73,12 +57,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     setLoading(true);
     setError(null);
 
-    // If a category tab is selected (other than ALL), incorporate it into query
-    const effectiveCategory = categories.find((c) => c.id === activeCategory);
-    let effectiveSearch = search.trim();
-    if (effectiveCategory && effectiveCategory.query && !effectiveSearch) {
-      effectiveSearch = effectiveCategory.query;
-    }
+    const effectiveSearch = search.trim();
 
     try {
       if (isAiSearch && effectiveSearch.length >= 2) {
@@ -105,7 +84,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [search, activeCategory, statusFilter, minPrice, maxPrice, offset, isAiSearch]);
+  }, [search, statusFilter, minPrice, maxPrice, offset, isAiSearch]);
 
   useEffect(() => {
     fetchProducts();
@@ -113,7 +92,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
   const handleClearFilters = () => {
     setSearch('');
-    setActiveCategory('ALL');
     setStatusFilter('ALL');
     setMinPrice('');
     setMaxPrice('');
@@ -178,31 +156,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-500' : ''}`} />
           </button>
         </div>
-      </div>
-
-      {/* Category Pills Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-        {categories.map((cat) => {
-          const Icon = cat.icon;
-          const isActive = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setActiveCategory(cat.id);
-                setOffset(0);
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                isActive
-                  ? 'bg-brand-500 text-white border-brand-600 shadow-md shadow-brand-500/25'
-                  : 'bg-white dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-brand-500/30 hover:text-brand-600 dark:hover:text-white'
-              }`}
-            >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-accent-300' : 'text-slate-400'}`} />
-              <span>{cat.name}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* Filter Drawer / Accordion */}
@@ -288,7 +241,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       )}
 
       {/* Active Filter Chips */}
-      {(search || statusFilter !== 'ALL' || minPrice || maxPrice || isAiSearch || activeCategory !== 'ALL') && (
+      {(search || statusFilter !== 'ALL' || minPrice || maxPrice || isAiSearch) && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Filtered by:</span>
           {search && (
@@ -306,15 +259,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               <span>AI Semantic Matching</span>
             </span>
           )}
-          {activeCategory !== 'ALL' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
-              <span>Category: {categories.find((c) => c.id === activeCategory)?.name}</span>
-              <X
-                className="w-3 h-3 cursor-pointer hover:text-slate-900 dark:hover:text-white"
-                onClick={() => setActiveCategory('ALL')}
-              />
-            </span>
-          )}
+
           {statusFilter !== 'ALL' && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
               <span>{statusFilter}</span>

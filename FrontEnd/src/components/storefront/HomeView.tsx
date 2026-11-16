@@ -30,11 +30,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [searchInput, setSearchInput] = useState('');
 
   const categoryCircles = [
-    { name: 'Super Deals', icon: Zap, query: 'deal', bg: 'bg-rose-50 text-brand-500' },
-    { name: 'Gaming', icon: Gamepad2, query: 'gaming', bg: 'bg-blue-50 text-blue-600' },
+    { name: 'Super Deals', icon: Zap, query: 'deal', bg: 'bg-amber-50 text-brand-600' },
+    { name: 'Gaming', icon: Gamepad2, query: 'gaming', bg: 'bg-slate-100 text-slate-700' },
     { name: 'Laptops', icon: Laptop, query: 'laptop', bg: 'bg-slate-100 text-slate-800' },
-    { name: 'Phones', icon: Smartphone, query: 'phone', bg: 'bg-emerald-50 text-emerald-600' },
-    { name: 'Watches', icon: Watch, query: 'watch', bg: 'bg-purple-50 text-purple-600' },
+    { name: 'Phones', icon: Smartphone, query: 'phone', bg: 'bg-amber-50 text-amber-700' },
+    { name: 'Watches', icon: Watch, query: 'watch', bg: 'bg-slate-100 text-slate-700' },
     { name: 'Audio', icon: Headphones, query: 'audio', bg: 'bg-amber-50 text-amber-600' },
   ];
 

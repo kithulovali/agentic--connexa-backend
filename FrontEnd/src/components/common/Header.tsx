@@ -12,14 +12,6 @@ import {
   Sun,
   Moon,
   Heart,
-  Laptop,
-  Home as HomeIcon,
-  Headphones,
-  Watch,
-  Sliders,
-  Tag,
-  Globe,
-  Layers,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCartStore } from '../../store/useCartStore';
@@ -31,9 +23,7 @@ interface HeaderProps {
   canAccessAdmin: boolean;
   onOpenAuth: () => void;
   onFocusSearch: () => void;
-  onSelectCategory?: (category: string) => void;
   onOpenAiRecommendations?: () => void;
-  onOpenUiShowcase?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,9 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
   canAccessAdmin,
   onOpenAuth,
   onFocusSearch,
-  onSelectCategory,
   onOpenAiRecommendations,
-  onOpenUiShowcase,
 }) => {
   const { user, isAuthenticated, logout } = useAuthStore();
   const { getTotalItems, setIsOpen: setCartOpen } = useCartStore();
@@ -53,29 +41,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('All');
 
   const totalCartItems = getTotalItems();
   const isDark = theme === 'dark';
-
-  const subCategories = [
-    { id: 'All', label: 'All Products', icon: Laptop },
-    { id: 'Audio', label: 'Audio', icon: Headphones },
-    { id: 'Wearables', label: 'Wearables', icon: Watch },
-    { id: 'Smart Home', label: 'Smart Tech', icon: HomeIcon },
-    { id: 'Accessories', label: 'Accessories', icon: Sliders },
-    { id: 'Sale', label: 'In Stock', icon: Tag, highlight: true },
-  ];
-
-  const handleCategoryClick = (catId: string) => {
-    setActiveCategory(catId);
-    if (onSelectCategory) {
-      onSelectCategory(catId);
-    }
-    if (currentView !== 'store') {
-      onNavigate('store');
-    }
-  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-urban-darker/95 backdrop-blur-md transition-colors duration-300">
@@ -300,57 +268,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Sub-Category Navigation Bar (TechVerse Reference 2 Style) */}
-      <div className="border-t border-slate-200/80 dark:border-slate-800/60 bg-slate-50/60 dark:bg-urban-darker/60 px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto scrollbar-none">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1 sm:gap-2">
-            {subCategories.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryClick(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                    isActive
-                      ? 'bg-brand-500 text-white shadow-sm'
-                      : cat.highlight
-                      ? 'text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{cat.label}</span>
-                  {cat.highlight && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
-                  )}
-                </button>
-              );
-            })}
-
-            {onOpenAiRecommendations && (
-              <button
-                onClick={onOpenAiRecommendations}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-accent-700 dark:text-accent-400 bg-accent-500/10 hover:bg-accent-500/20 border border-accent-500/30 transition-all whitespace-nowrap shadow-sm ml-1"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-accent-500 animate-pulse" />
-                <span>AI Recommend</span>
-              </button>
-            )}
-
-            {onOpenUiShowcase && (
-              <button
-                onClick={onOpenUiShowcase}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 transition-all whitespace-nowrap shadow-sm ml-1"
-              >
-                <Layers className="w-3.5 h-3.5 text-brand-500" />
-                <span>UI Showcase (16)</span>
-              </button>
-            )}
-          </div>
-
-
-
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-urban-darker px-4 py-4 space-y-2">
@@ -389,18 +306,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span>AI Recommendation Engine</span>
             </button>
           )}
-          {onOpenUiShowcase && (
-            <button
-              onClick={() => {
-                onOpenUiShowcase();
-                setMobileMenuOpen(false);
-              }}
-              className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-500/10 flex items-center gap-2"
-            >
-              <Layers className="w-4 h-4 text-accent-500" />
-              <span>UI Showcase (16 Interfaces)</span>
-            </button>
-          )}
+}
           {canAccessAdmin && (
           <button
             onClick={() => {

@@ -10,7 +10,6 @@ import {
   Package,
   CheckCircle2,
   Cpu,
-  Package,
 } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { formatCurrency } from '../../utils/formatters';

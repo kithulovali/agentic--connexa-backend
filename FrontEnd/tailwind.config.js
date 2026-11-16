@@ -10,17 +10,17 @@ export default {
       colors: {
         // Logo Primary Color - Vibrant Magenta Pink ("URBAN")
         brand: {
-          50: '#FDF2F8',
-          100: '#FCE7F3',
-          200: '#FBCFE8',
-          300: '#F9A8D4',
-          400: '#F43F9E',
-          500: '#E6007E', // Exact logo magenta pink
-          600: '#D10072',
-          700: '#A8005C',
-          800: '#830048',
-          900: '#50002C',
-          950: '#31001B',
+          50: '#FFFBEA',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#D9A514',
+          500: '#946B00',
+          600: '#805800',
+          700: '#684700',
+          800: '#513700',
+          900: '#3D2900',
+          950: '#241800',
         },
         // Logo Secondary Accent - Bright Golden Yellow ("SCENERY")
         accent: {
@@ -37,12 +37,12 @@ export default {
           950: '#2A1D00',
         },
         urban: {
-          pink: '#E6007E',
-          yellow: '#FFB800',
-          dark: '#0B0F19',
-          darker: '#070A12',
-          cardDark: '#111827',
-          borderDark: '#1F293D',
+          pink: '#946B00',
+          yellow: '#FACC15',
+          dark: '#171717',
+          darker: '#111111',
+          cardDark: '#1F1F1F',
+          borderDark: '#3F3F46',
         },
       },
       fontFamily: {

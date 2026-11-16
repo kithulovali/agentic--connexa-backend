@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
-import { HomeView, StorefrontBenefits } from './components/storefront/HomeView';
+import { HomeView } from './components/storefront/HomeView';
 import { ProductGrid } from './components/storefront/ProductGrid';
 import { CartDrawer } from './components/storefront/CartDrawer';
 import { CheckoutModal } from './components/storefront/CheckoutModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { AiShoppingAssistant } from './components/storefront/AiShoppingAssistant';
 import { AiRecommendationModal } from './components/storefront/AiRecommendationModal';
-import { UiShowcaseModal, UiInterfaceItem } from './components/common/UiShowcaseModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { useCartStore } from './store/useCartStore';
-import { useThemeStore } from './store/useThemeStore';
 import { useAuthStore } from './store/useAuthStore';
 import { api, ApiError } from './services/api';
 
@@ -20,10 +18,8 @@ export const App: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [recommendationModalOpen, setRecommendationModalOpen] = useState(false);
-  const [uiShowcaseOpen, setUiShowcaseOpen] = useState(false);
 
-  const { setIsOpen: setCartOpen, addItem } = useCartStore();
-  const { setTheme } = useThemeStore();
+  const { setIsOpen: setCartOpen } = useCartStore();
   const { token, isAuthenticated, isAdmin, updateUser, logout } = useAuthStore();
   const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
   const canAccessAdmin = Boolean(token && verifiedToken === token && isAuthenticated && isAdmin);
@@ -73,19 +69,6 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleCategorySelect = (category: string) => {
-    const queryMap: Record<string, string> = {
-      All: '',
-      'Smart Home': 'smart',
-      Audio: 'audio',
-      Wearables: 'watch',
-      Accessories: 'accessories',
-      Sale: 'deal',
-    };
-    const targetQuery = queryMap[category] !== undefined ? queryMap[category] : category.toLowerCase();
-    handleHeroSearch(targetQuery);
-  };
-
   const handleFocusSearch = () => {
     if (currentView !== 'store') {
       setCurrentView('store');
@@ -109,74 +92,6 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleTriggerUiAction = (actionType: UiInterfaceItem['actionType']) => {
-    switch (actionType) {
-      case 'theme_dark':
-        setTheme('dark');
-        break;
-      case 'theme_light':
-        setTheme('light');
-        break;
-      case 'scroll_catalog':
-        if (currentView !== 'store') setCurrentView('store');
-        setTimeout(handleExploreProducts, 100);
-        break;
-      case 'open_ai_recommend':
-        setRecommendationModalOpen(true);
-        break;
-      case 'open_cart':
-        setCartOpen(true);
-        break;
-      case 'open_checkout':
-        // Ensure cart has at least 1 item to preview checkout
-        addItem(
-          {
-            id: 1,
-            name: 'Sony WH-1000XM5 Wireless Headphones',
-            price: '399.99',
-            description: 'Industry-leading noise canceling Bluetooth headphones with 30-hour battery life.',
-            banner_image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
-            quantity: 30,
-            status: 'AVAILABLE',
-            created_at: new Date().toISOString(),
-          },
-          1
-        );
-        setCheckoutModalOpen(true);
-        break;
-      case 'open_auth':
-        setAuthModalOpen(true);
-        break;
-      case 'open_ai_assistant':
-        setAssistantPrompt('What flagship hardware do you recommend under $500?');
-        break;
-      case 'admin_gate':
-        if (canAccessAdmin) {
-          setCurrentView('admin');
-        } else {
-          setCurrentView('store');
-          if (!isAuthenticated) setAuthModalOpen(true);
-        }
-        break;
-      case 'admin_overview':
-      case 'admin_products':
-      case 'admin_customers':
-      case 'admin_orders':
-      case 'admin_payments':
-      case 'admin_ai_studio':
-      case 'admin_platforms':
-        if (canAccessAdmin) {
-          setCurrentView('admin');
-        } else {
-          setCurrentView('store');
-          if (!isAuthenticated) setAuthModalOpen(true);
-        }
-        break;
-      default:
-        break;
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-urban-darker text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Global Header */}
@@ -186,9 +101,7 @@ export const App: React.FC = () => {
         onNavigate={(v) => setCurrentView(v === 'admin' && !canAccessAdmin ? 'store' : v)}
         onOpenAuth={() => setAuthModalOpen(true)}
         onFocusSearch={handleFocusSearch}
-        onSelectCategory={handleCategorySelect}
         onOpenAiRecommendations={() => setRecommendationModalOpen(true)}
-        onOpenUiShowcase={() => setUiShowcaseOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -196,7 +109,6 @@ export const App: React.FC = () => {
         {currentView === 'store' || !canAccessAdmin ? (
           <>
             <HomeView
-              onNavigateToShop={handleCategorySelect}
               onSearch={handleHeroSearch}
               onOpenShoppingAssistant={() =>
                 setAssistantPrompt('Help me find a product that fits my needs.')
@@ -209,7 +121,6 @@ export const App: React.FC = () => {
               onClearInitialSearch={() => setSearchQuery('')}
               onOpenShoppingAssistant={(prompt) => setAssistantPrompt(prompt)}
             />
-            <StorefrontBenefits />
 
             {/* Persistent AI Shopping Assistant */}
             <AiShoppingAssistant
@@ -245,15 +156,9 @@ export const App: React.FC = () => {
       {/* Authentication Modal */}
       {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} />}
 
-      {/* 16 Interfaces Interactive UI Showcase Modal */}
-      <UiShowcaseModal
-        isOpen={uiShowcaseOpen}
-        onClose={() => setUiShowcaseOpen(false)}
-        onTriggerAction={handleTriggerUiAction}
-      />
 
       {/* Footer */}
-      <Footer onOpenUiShowcase={() => setUiShowcaseOpen(true)} />
+      <Footer />
     </div>
   );
 };

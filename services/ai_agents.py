@@ -136,11 +136,44 @@ def _collect_context(db: Session, include_orders: bool = True) -> dict[str, Any]
         product_performance.values(),
         key=lambda item: (-item["units_ordered"], -item["orders"]),
     )[:8]
+    top_order_value_products = sorted(
+        product_performance.values(),
+        key=lambda item: (-item["order_value"], -item["orders"]),
+    )[:8]
+    recent_order_activity = [
+        dated_activity[key] for key in sorted(dated_activity, reverse=True)[:14]
+    ]
+    available_products = [p for p in catalogue if p["status"] == "AVAILABLE" and p["quantity"] > 0]
+    low_stock_products = [p for p in available_products if p["quantity"] <= 5]
+    inventory_summary = {
+        "available_products": len(available_products),
+        "available_stock_units": sum(p["quantity"] for p in available_products),
+        "low_stock_products_count": len(low_stock_products),
+        "out_of_stock_products_count": sum(p["quantity"] <= 0 or p["status"] != "AVAILABLE" for p in catalogue),
+        "listed_inventory_value": round(sum(p["price"] * p["quantity"] for p in available_products), 2),
+        "low_stock_products": [
+            {"id": p["id"], "name": p["name"], "quantity": p["quantity"], "price": p["price"]}
+            for p in sorted(low_stock_products, key=lambda item: (item["quantity"], item["name"].lower()))[:10]
+        ],
+        "out_of_stock_products": [
+            {"id": p["id"], "name": p["name"], "quantity": p["quantity"], "status": p["status"]}
+            for p in catalogue if p["quantity"] <= 0 or p["status"] != "AVAILABLE"
+        ][:10],
+    }
+    non_cancelled_order_value = sum(o["total_price"] for o in non_cancelled_orders)
+    paid_order_value = sum(o["total_price"] for o in paid_orders)
     recent_order_activity = [
         dated_activity[key] for key in sorted(dated_activity, reverse=True)[:14]
     ]
     summary = {
         "catalogue_products": len(catalogue),
+        "inventory_summary": inventory_summary,
+        "average_non_cancelled_order_value": round(
+            non_cancelled_order_value / len(non_cancelled_orders), 2
+        ) if non_cancelled_orders else 0.0,
+        "paid_order_rate": round(len(paid_orders) / len(orders_data), 4) if orders_data else 0.0,
+        "paid_order_value_rate": round(paid_order_value / sum(o["total_price"] for o in orders_data), 4)
+        if sum(o["total_price"] for o in orders_data) else 0.0,
         "orders_loaded": len(orders_data),
         "order_value_loaded": round(sum(o["total_price"] for o in orders_data), 2),
         "non_cancelled_order_value_loaded": round(
@@ -157,6 +190,7 @@ def _collect_context(db: Session, include_orders: bool = True) -> dict[str, Any]
         "cancelled_order_rate_loaded": round(len(cancelled_orders) / len(orders_data), 4) if orders_data else 0.0,
         "paid_orders_loaded": len(paid_orders),
         "top_ordered_products_loaded": top_ordered_products,
+        "top_order_value_products_loaded": top_order_value_products,
         "recent_order_activity_loaded": recent_order_activity,
         "order_status_counts": {
             status: sum(o["order_status"] == status for o in orders_data)
@@ -167,7 +201,7 @@ def _collect_context(db: Session, include_orders: bool = True) -> dict[str, Any]
             for status in sorted({o["payment_status"] for o in orders_data})
         },
         "low_stock_products_threshold_5": low_stock,
-        "out_of_stock_products": [p for p in catalogue if p["quantity"] <= 0],
+        "out_of_stock_products": [p for p in catalogue if p["quantity"] <= 0 or p["status"] != "AVAILABLE"],
         "data_note": (
             "Newest 300 products by ID are loaded; order records are excluded for this agent."
             if not include_orders
@@ -181,21 +215,117 @@ def _collect_context(db: Session, include_orders: bool = True) -> dict[str, Any]
     return {"catalogue": catalogue, "orders": orders_data, "summary": summary}
 
 
+def _business_intelligence_fallback(question: str, context: dict[str, Any]) -> str:
+    """Produce a useful, question-aware BI report without relying on an LLM."""
+    summary = context["summary"]
+    inventory = summary["inventory_summary"]
+    normalized_question = question.lower()
+    top_units = summary["top_ordered_products_loaded"]
+    top_value = summary["top_order_value_products_loaded"]
+    recent_activity = summary["recent_order_activity_loaded"]
+
+    def product_lines(items: list[dict[str, Any]], metric: str) -> str:
+        if not items:
+            return "- No product-level order activity was found in the loaded orders."
+        return "\n".join(
+            f"- {item['product_name']} (ID {item['product_id']}): "
+            f"{item[metric]} {'units' if metric == 'units_ordered' else 'in recorded order value'} "
+            f"across {item['orders']} non-cancelled order(s)"
+            for item in items[:5]
+        )
+
+    overview = (
+        "## Business snapshot\n"
+        f"- Products loaded: {summary['catalogue_products']}\n"
+        f"- Orders loaded: {summary['orders_loaded']} "
+        f"({summary['non_cancelled_orders_loaded']} non-cancelled; "
+        f"{summary['order_status_counts'].get('CANCELLED', 0)} cancelled)\n"
+        f"- Units ordered in the loaded sample: {summary['units_ordered_loaded']}\n"
+        f"- Recorded order value: {summary['order_value_loaded']:.2f}\n"
+        f"- Non-cancelled order value: {summary['non_cancelled_order_value_loaded']:.2f}\n"
+        f"- Average non-cancelled order value: {summary['average_non_cancelled_order_value']:.2f}\n"
+        f"- Orders marked paid: {summary['paid_orders_loaded']} "
+        f"({summary['paid_order_rate']:.1%} of loaded orders)\n"
+        f"- Recorded value marked paid: {summary['order_value_marked_paid_loaded']:.2f}\n"
+        f"- Cancellation rate: {summary['cancelled_order_rate_loaded']:.1%}\n"
+        "\n## Inventory position\n"
+        f"- Available products: {inventory['available_products']}\n"
+        f"- Available stock units: {inventory['available_stock_units']}\n"
+        f"- Low-stock products (1–5 units): {inventory['low_stock_products_count']}\n"
+        f"- Out-of-stock or unavailable products: {inventory['out_of_stock_products_count']}\n"
+        f"- Listed value of available inventory: {inventory['listed_inventory_value']:.2f}"
+    )
+
+    if any(term in normalized_question for term in ("stock", "inventory", "reorder", "out of stock")):
+        low_stock = inventory["low_stock_products"]
+        out_of_stock = inventory["out_of_stock_products"]
+        sections = [overview, "\n## Inventory requiring review"]
+        sections.append(
+            "\n".join(
+                f"- {item['name']} (ID {item['id']}): {item['quantity']} unit(s) remaining"
+                for item in low_stock
+            ) if low_stock else "- No low-stock products were identified in the loaded catalogue."
+        )
+        sections.append(
+            "\n".join(
+                f"- {item['name']} (ID {item['id']}): {item['status']}, quantity {item['quantity']}"
+                for item in out_of_stock
+            ) if out_of_stock else "- No out-of-stock or unavailable products were identified."
+        )
+        sections.append(
+            "Recommended review: validate supplier lead times and recent non-cancelled order activity "
+            "before setting reorder quantities. The available data does not include supplier lead times."
+        )
+        return "\n".join(sections)
+
+    if any(term in normalized_question for term in ("payment", "paid", "unpaid", "cancel", "pending")):
+        return (
+            overview + "\n\n## Order and payment status\n"
+            f"- Order statuses: {summary['order_status_counts']}\n"
+            f"- Payment statuses: {summary['payment_status_counts']}\n"
+            f"- Recorded value associated with cancelled orders: {summary['cancelled_order_value_loaded']:.2f}\n"
+            f"- Recorded value associated with orders marked paid: {summary['order_value_marked_paid_loaded']:.2f}\n"
+            "Recommended review: reconcile orders marked paid against the payment provider and investigate "
+            "cancellation reasons. Application payment status alone does not prove settlement."
+        )
+
+    if any(term in normalized_question for term in ("product", "best seller", "popular", "top", "demand")):
+        return (
+            overview + "\n\n## Most ordered products\n"
+            + product_lines(top_units, "units_ordered")
+            + "\n\n## Highest recorded order value by product\n"
+            + product_lines(top_value, "order_value")
+            + "\nRecommended review: compare stock availability with non-cancelled order activity "
+            "before replenishing. Order activity is not a forecast of future demand."
+        )
+
+    activity_lines = (
+        "\n".join(
+            f"- {item['date']}: {item['orders']} order(s), {item['units_ordered']} unit(s), "
+            f"recorded order value {item['order_value']:.2f}"
+            for item in recent_activity
+        )
+        if recent_activity else "- No dated order activity was available."
+    )
+    return (
+        overview + "\n\n## Product performance\n"
+        + product_lines(top_units, "units_ordered")
+        + "\n\n## Recent dated activity\n" + activity_lines
+        + "\n\n## Recommended next steps\n"
+        "- Review frequently ordered products against current stock levels.\n"
+        "- Reconcile paid-status records with payment-provider settlement records.\n"
+        "- Track customer acquisition, enquiries, campaign spend, clicks, and attributed orders "
+        "before evaluating conversion or marketing return."
+        "\n\n## Data limitations\n"
+        + summary["data_note"]
+        + " Figures are based on the loaded sample only; order value is not verified revenue."
+    )
+
+
 def _fallback(agent: str, question: str, context: dict[str, Any]) -> str:
     s = context["summary"]
     if agent == "business_intelligence":
-        return (
-            f"Loaded {s['catalogue_products']} products and {s['orders_loaded']} orders. "
-            f"Order value across loaded orders: {s['order_value_loaded']:.2f}; "
-            f"non-cancelled order value: {s['non_cancelled_order_value_loaded']:.2f}; "
-            f"cancelled order value: {s['cancelled_order_value_loaded']:.2f}; "
-            f"order value marked paid: {s['order_value_marked_paid_loaded']:.2f}. "
-            f"Units ordered: {s['units_ordered_loaded']}. "
-            f"Low stock (quantity <= 5): {len(s['low_stock_products_threshold_5'])}; "
-            f"out of stock: {len(s['out_of_stock_products'])}. "
-            "These capped records are not lifetime totals, and order value is not verified revenue. "
-            f"Set GOOGLE_API_KEY to enable Gemini analysis. Request: {question}"
-        )
+        return _business_intelligence_fallback(question, context)
     if agent == "product_discovery":
         import re
         stop_words = {

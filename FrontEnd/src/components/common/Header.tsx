@@ -68,13 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5 font-heading">
               <span>URBAN</span>
               <span className="text-brand-500">SCENERY</span>
-              <span className="hidden sm:inline text-[9px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 uppercase tracking-widest font-mono">
-                Ventures
-              </span>
             </div>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono tracking-wider hidden sm:block">
-              ELECTRONICS & AI PLATFORM
-            </p>
           </div>
         </div>
 
@@ -306,7 +300,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>AI Recommendation Engine</span>
             </button>
           )}
-}
           {canAccessAdmin && (
           <button
             onClick={() => {

@@ -105,11 +105,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-brand-600 dark:text-brand-400 mb-1 tracking-wider uppercase font-semibold">
-            <span>Products</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-500"></span>
-            <span>Live Catalogue</span>
-          </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-heading">
             Products
           </h2>
@@ -291,9 +286,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           <div className="flex-1">
             <h4 className="text-sm font-bold">API Connection Issue</h4>
             <p className="text-xs mt-1 text-rose-600 dark:text-rose-300/90">{error}</p>
-            <p className="text-[11px] mt-2 text-rose-500 dark:text-rose-300/70">
-              Note: The backend is hosted on Render and may take 20–30s to wake up if inactive.
-            </p>
           </div>
           <button
             onClick={() => fetchProducts()}

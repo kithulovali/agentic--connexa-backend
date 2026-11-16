@@ -26,20 +26,26 @@ class Settings:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     
-    # CORS
-    _cors_origins = os.getenv("CORS_ORIGINS", "")
-    CORS_ORIGINS: List[str] = (
-        [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
-        if _cors_origins.strip()
-        else [
-            "https://agentic-connexa-frontend-taupe.vercel.app",
-            "https://agentic-connexa-backend.vercel.app/",
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173",
-        ]
-    )
+    # CORS: retain configured origins while always allowing the deployed storefront.
+    _configured_origins = [
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    _required_origins = [
+        "https://agentic-connexa-backend-1.onrender.com",
+        "https://agentic-connexa-frontend-guj8.vercel.app",
+        "https://agentic-connexa-frontend-taupe.vercel.app",
+    ]
+    _development_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
+    CORS_ORIGINS: List[str] = list(dict.fromkeys(
+        _required_origins + _development_origins + _configured_origins
+    ))
 
 
 settings = Settings()

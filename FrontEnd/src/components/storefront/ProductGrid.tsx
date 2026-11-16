@@ -128,12 +128,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-brand-600 dark:text-brand-400 mb-1 tracking-wider uppercase font-semibold">
-            <span>Hardware Inventory</span>
+            <span>Popular Products</span>
             <span className="w-1.5 h-1.5 rounded-full bg-accent-500"></span>
-            <span>Real-Time Cloud Sync</span>
+            <span>Live Catalogue</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight font-heading">
-            Electronics Catalogue
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-heading">
+            Popular Products
           </h2>
         </div>
 

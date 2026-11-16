@@ -700,7 +700,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 {/* 3 Main KPI Cards (AVG Order Value, Total Orders, Lifetime Revenue) */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  {/* Card 1: AVG . Order Value (Solid Purple/Brand Card) */}
+                  {/* Card 1: Average Order Value (Solid Purple/Brand Card) */}
                   <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden flex flex-col justify-between min-h-[145px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-white/90">
@@ -715,7 +715,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {formatCurrency(stats.avgOrderValue)}
                       </div>
                       <div className="text-[11px] text-white/80 font-medium">
-                        {stats.orders > 0 ? `Avg per fulfilled order` : 'Grounded in live database orders'}
+                        {stats.orders > 0 ? `Average value per order` : 'Grounded in live database orders'}
                       </div>
                     </div>
                   </div>
@@ -740,7 +740,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Card 3: Settled Revenue (Clean Surface Card) */}
+                  {/* Card 3: Order Value Total (Clean Surface Card) */}
                   <div className="p-6 rounded-2xl bg-white dark:bg-urban-dark border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between min-h-[145px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -755,7 +755,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {formatCurrency(stats.revenue)}
                       </div>
                       <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                        {stats.revenue > 0 ? 'Live gross settled volume' : 'Zero orders placed yet'}
+                        {stats.revenue > 0 ? 'Total value recorded across orders' : 'Zero orders placed yet'}
                       </div>
                     </div>
                   </div>
@@ -766,7 +766,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="p-6 rounded-2xl bg-white dark:bg-urban-dark border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                        Top Selling Product
+                        Inventory Snapshot
                       </h3>
                       <button
                         onClick={() => setActiveTab('PRODUCTS')}

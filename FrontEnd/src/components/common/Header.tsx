@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden bg-slate-200 p-0.5 shadow-sm dark:bg-slate-700 group-hover:scale-105 transition-transform duration-300">
             <img
               src="/urban-scenery-logo.png"
-              alt="Urban Scenery Ventures"
+              alt="Urban Scenery logo"
               className="w-full h-full object-cover rounded-[10px] bg-white dark:bg-urban-darker"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';

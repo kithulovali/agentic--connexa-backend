@@ -744,7 +744,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="p-6 rounded-2xl bg-white dark:bg-urban-dark border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between min-h-[145px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Settled Revenue
+                        Total Order Value
                       </span>
                       <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
                         <Sparkles className="w-4 h-4" />

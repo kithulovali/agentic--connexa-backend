@@ -55,10 +55,10 @@
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #e6007e;
+  background: #d4a900;
 }
 .light ::-webkit-scrollbar-thumb:hover {
-  background: #e6007e;
+  background: #d4a900;
 }
 
 /* Glassmorphism styling */

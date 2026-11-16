@@ -7,7 +7,7 @@ import {
   Plus,
   Minus,
   Sparkles,
-  ShieldCheck,
+  Package,
   CheckCircle2,
   Cpu,
 } from 'lucide-react';
@@ -183,17 +183,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onOpenCheckout }) => {
                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* Verified Order Assurance Badge */}
-                <div className="p-3 rounded-xl bg-brand-500/5 dark:bg-brand-500/10 border border-brand-500/20 text-xs flex items-start gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
-                  <div>
-    
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Prices and items are verified directly against our live catalog database.
-                    </div>
-                  </div>
                 </div>
 
                 {/* "You Might Also Like" Cross-Sell Row Grounded in Live Products */}

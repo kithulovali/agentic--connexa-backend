@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from './components/common/Header';
-import { Footer } from './components/common/Footer';
 import { HomeView } from './components/storefront/HomeView';
 import { ProductGrid } from './components/storefront/ProductGrid';
 import { CartDrawer } from './components/storefront/CartDrawer';
@@ -156,9 +155,6 @@ export const App: React.FC = () => {
       {/* Authentication Modal */}
       {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} />}
 
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 };

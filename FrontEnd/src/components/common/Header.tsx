@@ -11,7 +11,6 @@ import {
   Search,
   Sun,
   Moon,
-  Heart,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCartStore } from '../../store/useCartStore';
@@ -40,7 +39,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [wishlistCount, setWishlistCount] = useState(0);
 
   const totalCartItems = getTotalItems();
   const isDark = theme === 'dark';
@@ -81,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
             <input
               type="text"
               readOnly
-              placeholder="Search for tech gadgets, ideas and more..."
+              placeholder="Search products..."
               className="w-full pl-10 pr-10 py-2 bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-900 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-full text-xs text-slate-700 dark:text-slate-200 placeholder-slate-400 cursor-pointer transition-all"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 group-hover:text-brand-500 transition-colors" />
@@ -136,20 +134,6 @@ export const Header: React.FC<HeaderProps> = ({
               <Sun className="w-4 h-4 text-accent-400 hover:rotate-45 transition-transform duration-300" />
             ) : (
               <Moon className="w-4 h-4 text-slate-700 hover:-rotate-12 transition-transform duration-300" />
-            )}
-          </button>
-
-          {/* Wishlist Button (Reference 2 & 3) */}
-          <button
-            onClick={() => setWishlistCount((prev) => prev + 1)}
-            title="Wishlist"
-            className="relative p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/90 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 border border-slate-200 dark:border-slate-800 transition-all hidden sm:flex"
-          >
-            <Heart className="w-4 h-4" />
-            {wishlistCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-brand-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {wishlistCount}
-              </span>
             )}
           </button>
 
@@ -276,7 +260,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
             }`}
           >
-            Electronics Storefront
+            Store
           </button>
           <button
             onClick={() => {
@@ -286,7 +270,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 flex items-center gap-2"
           >
             <Search className="w-4 h-4 text-brand-500" />
-            <span>AI Smart Search</span>
+            <span>Search</span>
           </button>
           {onOpenAiRecommendations && (
             <button
@@ -297,7 +281,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4 text-accent-500" />
-              <span>AI Recommendation Engine</span>
+              <span>AI Recommendations</span>
             </button>
           )}
           {canAccessAdmin && (
@@ -312,7 +296,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
             }`}
           >
-            <span>Merchant & AI Hub</span>
+            <span>Merchant Dashboard</span>
             {canAccessAdmin && (
               <span className="text-[10px] px-2 py-0.5 rounded bg-accent-500/20 text-accent-700 dark:text-accent-400 font-mono">
                 Admin

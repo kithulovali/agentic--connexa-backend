@@ -120,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </nav>
 
-        {/* Right Actions: Theme, Wishlist, Cart, Profile */}
+        {/* Right Actions: Theme, Cart, Profile */}
         <div className="flex items-center gap-2">
           {/* Light / Dark Mode Toggle Button */}
           <button

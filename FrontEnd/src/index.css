@@ -6,18 +6,18 @@
   :root {
     --font-heading: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
   html.light {
     color-scheme: light;
-    background-color: #f8fafc;
+    background-color: #ffffff;
     color: #0f172a;
   }
 
   html.dark {
     color-scheme: dark;
-    background-color: #070a12;
+    background-color: #171717;
     color: #f8fafc;
   }
 
@@ -39,18 +39,18 @@
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: #171717;
 }
 .light ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f4f4f5;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #1f293d;
+  background: #52525b;
   border-radius: 4px;
 }
 .light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #a1a1aa;
   border-radius: 4px;
 }
 
@@ -85,38 +85,37 @@
 
 .dark .glass-dropdown {
   background: rgba(11, 15, 25, 0.96);
-  border: 1px solid rgba(230, 0, 126, 0.25);
+  border: 1px solid rgba(250, 204, 21, 0.22);
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
 }
 
 .light .glass-dropdown {
   background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(230, 0, 126, 0.2);
-  box-shadow: 0 20px 40px -10px rgba(230, 0, 126, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  box-shadow: 0 20px 40px -10px rgba(250, 204, 21, 0.06), 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* Logo brand gradient helpers */
+/* Restrained charcoal and warm-yellow brand system */
 .bg-brand-gradient {
-  background: linear-gradient(135deg, #E6007E 0%, #D10072 45%, #FFB800 100%);
+  background: linear-gradient(135deg, #27272a 0%, #52525b 58%, #facc15 100%);
 }
-
 .bg-brand-gradient-hover:hover {
-  background: linear-gradient(135deg, #F43F9E 0%, #E6007E 45%, #FFC933 100%);
+  background: linear-gradient(135deg, #3f3f46 0%, #71717a 58%, #facc15 100%);
 }
-
 .text-brand-gradient {
-  background: linear-gradient(135deg, #E6007E 0%, #F43F9E 50%, #FFB800 100%);
+  background: linear-gradient(135deg, #946b00 0%, #d4a900 55%, #facc15 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Pulse animation for AI glow with logo colors */
+/* Pulse animation for AI glow with restrained yellow */
+
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(230, 0, 126, 0.35), 0 0 5px rgba(255, 184, 0, 0.25);
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.20), 0 0 5px rgba(250, 204, 21, 0.12);
   }
   50% {
-    box-shadow: 0 0 28px rgba(230, 0, 126, 0.65), 0 0 12px rgba(255, 184, 0, 0.45);
+    box-shadow: 0 0 28px rgba(250, 204, 21, 0.32), 0 0 12px rgba(250, 204, 21, 0.22);
   }
 }
 

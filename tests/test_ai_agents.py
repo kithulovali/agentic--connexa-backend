@@ -68,6 +68,12 @@ def test_business_intelligence_separates_cancelled_and_paid_order_value(session)
     assert summary["top_ordered_products_loaded"][0]["product_name"] == "Analytics test product"
     assert summary["top_ordered_products_loaded"][0]["units_ordered"] == 2
     assert summary["recent_order_activity_loaded"]
+    assert summary["average_non_cancelled_order_value"] == 50.0
+    assert summary["paid_order_rate"] == 0.3333
+    assert summary["top_order_value_products_loaded"][0]["order_value"] == 100.0
+    assert summary["inventory_summary"]["available_products"] == 1
+    assert summary["inventory_summary"]["available_stock_units"] == 8
+    assert summary["inventory_summary"]["low_stock_products_count"] == 0
     assert "not verified revenue" in summary["data_note"]
 
 
@@ -292,3 +298,63 @@ def test_product_discovery_gemini_context_excludes_unavailable_products(session,
     assert result["answer"] == "Available laptop is a catalogue match."
     assert "Available laptop" in captured["prompt"]
     assert "Unavailable laptop" not in captured["prompt"]
+
+
+
+def test_business_intelligence_fallback_answers_inventory_questions(session, monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    available = get_lookup(session, ProductStatus, "AVAILABLE")
+    empty = get_lookup(session, ProductStatus, "EMPTY")
+    session.add_all([
+        Product(
+            name="Low stock laptop", price=Decimal("500.00"), quantity=3,
+            product_status_record=available,
+        ),
+        Product(
+            name="Unavailable monitor", price=Decimal("250.00"), quantity=0,
+            product_status_record=empty,
+        ),
+    ])
+    session.commit()
+
+    result = run_agent("business_intelligence", "Which products need restocking?", session)
+
+    assert result["model"] == "deterministic-fallback"
+    assert "Inventory requiring review" in result["answer"]
+    assert "Low stock laptop" in result["answer"]
+    assert "Unavailable monitor" in result["answer"]
+    assert result["data_summary"]["inventory_summary"]["low_stock_products_count"] == 1
+    assert result["data_summary"]["inventory_summary"]["out_of_stock_products_count"] == 1
+
+
+def test_business_intelligence_fallback_answers_product_performance_questions(session, monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    product = Product(
+        name="Popular test laptop", price=Decimal("100.00"), quantity=8,
+        product_status_record=get_lookup(session, ProductStatus, "AVAILABLE"),
+    )
+    session.add(product)
+    session.commit()
+    create_order(
+        product_id=product.id, quantity=2, address="Test address",
+        contact="0700000000", session=session,
+    )
+
+    result = run_agent("business_intelligence", "Show top products", session)
+
+    assert "Most ordered products" in result["answer"]
+    assert "Popular test laptop" in result["answer"]
+    assert "2 units" in result["answer"]
+    assert "not verified revenue" in result["answer"]
+
+
+def test_business_intelligence_fallback_answers_payment_questions(session, monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    result = run_agent("business_intelligence", "Give me a payment status summary", session)
+
+    assert "Order and payment status" in result["answer"]
+    assert "Payment statuses" in result["answer"]
+    assert "does not prove settlement" in result["answer"]

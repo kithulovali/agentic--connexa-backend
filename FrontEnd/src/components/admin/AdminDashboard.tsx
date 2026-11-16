@@ -573,7 +573,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Bottom Card: "Upgrade Pro" (Matching Reference Image 1) */}
           <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800/80">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-brand-600 via-brand-500 to-purple-600 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden">
               <div className="absolute -right-3 -bottom-3 w-16 h-16 bg-white/10 rounded-full blur-xl pointer-events-none" />
               <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-3">
                 <Sparkles className="w-4 h-4 text-accent-200" />
@@ -701,7 +701,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {/* 3 Main KPI Cards (AVG Order Value, Total Orders, Lifetime Revenue) */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   {/* Card 1: AVG . Order Value (Solid Purple/Brand Card) */}
-                  <div className="p-6 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-purple-600 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden flex flex-col justify-between min-h-[145px]">
+                  <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden flex flex-col justify-between min-h-[145px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-white/90">
                         AVG . Order Value
@@ -810,8 +810,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       >
                         <defs>
                           <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#E6007E" stopOpacity="0.25" />
-                            <stop offset="100%" stopColor="#E6007E" stopOpacity="0.0" />
+                            <stop offset="0%" stopColor="#D4A900" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#D4A900" stopOpacity="0.0" />
                           </linearGradient>
                           <linearGradient id="orderGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.20" />
@@ -826,7 +826,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <line x1="0" y1="125" x2="500" y2="125" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" strokeDasharray="3 3" />
 
                         {/* Dotted vertical reference indicator for August */}
-                        <line x1="180" y1="0" x2="180" y2="140" stroke="#E6007E" strokeDasharray="2 2" strokeOpacity="0.5" />
+                        <line x1="180" y1="0" x2="180" y2="140" stroke="#D4A900" strokeDasharray="2 2" strokeOpacity="0.5" />
 
                         {/* Revenue Curve & Area */}
                         <path
@@ -836,7 +836,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <path
                           d="M0,115 C70,125 120,45 180,90 C240,135 320,35 400,65 C450,85 480,35 500,45"
                           fill="none"
-                          stroke="#E6007E"
+                          stroke="#D4A900"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                         />

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface HomeViewProps {
-  onNavigateToShop: (category?: string) => void;
+  onNavigateToShop: (category: string) => void;
   onSearch: (query: string) => void;
   onOpenShoppingAssistant: () => void;
   onExploreProducts: () => void;

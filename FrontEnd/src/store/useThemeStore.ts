@@ -8,7 +8,7 @@ interface ThemeState {
   setTheme: (theme: Theme) => void;
 }
 
-const THEME_KEY = 'urban:theme';
+const THEME_KEY = 'urban:theme-v2';
 
 const getInitialTheme = (): Theme => {
   try {
@@ -18,10 +18,7 @@ const getInitialTheme = (): Theme => {
     console.warn('Failed to read theme from localStorage', e);
   }
 
-  if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
-  }
-  return 'dark'; // Default to sleek dark mode
+  return 'light'; // Default to the white, gray and yellow storefront theme
 };
 
 const applyThemeToDocument = (theme: Theme) => {
@@ -42,7 +39,7 @@ const applyThemeToDocument = (theme: Theme) => {
     metaTheme.setAttribute('name', 'theme-color');
     document.head.appendChild(metaTheme);
   }
-  metaTheme.setAttribute('content', theme === 'dark' ? '#070A12' : '#FFFFFF');
+  metaTheme.setAttribute('content', theme === 'dark' ? '#171717' : '#FFFFFF');
 };
 
 const initialTheme = getInitialTheme();

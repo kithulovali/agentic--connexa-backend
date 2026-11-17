@@ -227,6 +227,39 @@ export const api = {
     });
   },
 
+  async uploadImage(file: File): Promise<{
+    url: string;
+    public_id: string;
+    format?: string;
+    width?: number;
+    height?: number;
+    bytes?: number;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = useAuthStore.getState().token;
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}${API_PREFIX}/uploads/image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new ApiError(
+        response.status,
+        data.detail || data.message || 'Image upload failed',
+        data
+      );
+    }
+
+    return data;
+  },
+
   // ==========================================
   // Orders
   // ==========================================

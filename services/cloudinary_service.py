@@ -11,19 +11,20 @@ MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024
 
 
 def _configure_cloudinary() -> None:
-    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
-    api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
-    api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
+    cloudinary_url = os.getenv("CLOUDINARY_URL", "").strip()
+    if not cloudinary_url:
+        raise RuntimeError(
+            "Cloudinary is not configured. Set CLOUDINARY_URL using the value "
+            "provided in Cloudinary Console > Settings > API Keys."
+        )
+    if not cloudinary_url.startswith("cloudinary://"):
+        raise RuntimeError(
+            "CLOUDINARY_URL must use the format cloudinary://<api_key>:<api_secret>@<cloud_name>."
+        )
 
-    if not all((cloud_name, api_key, api_secret)):
-        raise RuntimeError("Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.")
-
-    cloudinary.config(
-        cloud_name=cloud_name,
-        api_key=api_key,
-        api_secret=api_secret,
-        secure=True,
-    )
+    # The Cloudinary Python SDK reads CLOUDINARY_URL automatically.
+    # Keep secure delivery enabled for generated asset URLs.
+    cloudinary.config(secure=True)
 
 
 def upload_image(file_obj: Any, filename: str) -> dict:

@@ -118,6 +118,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [pPrice, setPPrice] = useState('');
   const [pDescription, setPDescription] = useState('');
   const [pBannerImage, setPBannerImage] = useState('');
+  const [pImageUploading, setPImageUploading] = useState(false);
   const [pQuantity, setPQuantity] = useState(10);
   const [pStatus, setPStatus] = useState('AVAILABLE');
   const [productSubmitting, setProductSubmitting] = useState(false);
@@ -268,6 +269,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // ==========================================
   // Handlers
   // ==========================================
+  const handleProductImageUpload = async (file?: File) => {
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      showStatus('Choose a JPEG, PNG, WEBP, or GIF image.', 'error');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      showStatus('Image must be 8 MB or smaller.', 'error');
+      return;
+    }
+
+    setPImageUploading(true);
+    try {
+      const uploaded = await api.uploadImage(file);
+      setPBannerImage(uploaded.url);
+      showStatus('Product image uploaded to Cloudinary.');
+    } catch (err: any) {
+      showStatus(err.message || 'Image upload failed.', 'error');
+    } finally {
+      setPImageUploading(false);
+    }
+  };
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setProductSubmitting(true);
@@ -1707,16 +1733,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1 uppercase font-mono">
-                  Banner Image URL
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-2 uppercase font-mono">
+                  Product Image
                 </label>
-                <input
-                  type="url"
-                  value={pBannerImage}
-                  onChange={(e) => setPBannerImage(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                />
+                {pBannerImage && (
+                  <div className="relative mb-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-950">
+                    <img src={pBannerImage} alt="Product preview" className="w-full h-40 object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => setPBannerImage('')}
+                      className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-slate-900/80 text-white text-[11px] font-bold"
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                )}
+                <label className={`flex items-center justify-center gap-2 w-full px-3 py-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:border-brand-500 ${pImageUploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                  {pImageUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4 text-brand-500" />}
+                  <span>{pImageUploading ? 'Uploading image...' : 'Choose image to upload'}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    disabled={pImageUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      void handleProductImageUpload(file);
+                      e.currentTarget.value = '';
+                    }}
+                  />
+                </label>
+                <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                  JPEG, PNG, WEBP, or GIF · Maximum 8 MB. Images are stored in Cloudinary.
+                </p>
               </div>
 
               <div>
@@ -1756,10 +1805,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={productSubmitting}
+                  disabled={productSubmitting || pImageUploading}
                   className="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25"
                 >
-                  {productSubmitting ? 'Saving...' : 'Save Product'}
+                  {pImageUploading ? 'Uploading image...' : productSubmitting ? 'Saving...' : 'Save Product'}
                 </button>
               </div>
             </form>
